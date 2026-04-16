@@ -336,6 +336,7 @@ class Tank{
     // Update flash timer
     if(this.flashTimer>0)this.flashTimer--;
   }
+  drawMinimap(){
     if(!this.alive)return;
     mmCtx.fillStyle=this.isPlayer?'#0f0':(this.isPlayer2?'#44f':'#f44');
     mmCtx.fillRect(this.x/GW*80,this.y/(H-HUD_H)*60,3,3);
