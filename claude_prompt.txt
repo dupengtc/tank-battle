@@ -1,0 +1,17 @@
+You are Claude Code, expert game developer.
+
+Read OPTIMIZE_TASK.md and execute ALL 30 rounds of optimization for the tank battle game.
+
+WORKFLOW for each round:
+1. Read tank-battle.html to understand current state
+2. Implement the optimization for that round
+3. Save the file
+4. Run: git add . && git commit -m "[Rnd-N] Category: Description" && git push
+5. Append to OPTIMIZATION_REPORT.md
+
+When ALL 30 rounds are done, run this command:
+openclaw system event --text "Tank Battle 30-round optimization COMPLETE. 30 new commits pushed to GitHub." --mode now
+
+Then output: TASK_FINISHED
+
+Start now with Round 1.

@@ -387,7 +387,18 @@ class Bullet{
   constructor(x,y,dir,isPlayer,big=false,isPlayer2=false){
     this.x=x;this.y=y;this.dir=dir;this.isPlayer=isPlayer;this.isPlayer2=isPlayer2;this.big=big;
     this.speed=big?8:6;this.alive=true;this.w=big?6:4;this.h=big?6:4;
+    // 缩小10%hitbox防止贴脸误判
+    this.hitboxScale=0.9;
     this.trail=[];
+  }
+  getHitbox(){
+    const s=TS*this.hitboxScale;
+    return{
+      x:this.x-s/2,
+      y:this.y-s/2,
+      w:s,
+      h:s
+    };
   }
   update(){
     // Store trail position
