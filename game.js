@@ -1,82 +1,5 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>坦克大战 Battle City</title>
-<style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{background:#000;display:flex;justify-content:center;align-items:center;min-height:100vh;overflow:hidden;font-family:'Courier New',monospace}
-  #wrap{position:relative;display:inline-block}
-  #c{background:#000;display:block;image-rendering:pixelated;border:2px solid #333}
-  #overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.03);pointer-events:none;z-index:2;
-    background-image:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.08) 2px,rgba(0,0,0,0.08) 4px)}
-  #scanlines{position:absolute;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.15),rgba(0,0,0,0.15) 1px,transparent 1px,transparent 2px);pointer-events:none;z-index:3;opacity:0.4}
-  #hud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;padding:6px 12px;background:rgba(0,0,0,0.85);color:#0f0;font-size:13px;z-index:4;border-bottom:1px solid #333;font-family:'Courier New',monospace}
-  .hud-item{display:flex;align-items:center;gap:8px}
-  .hud-label{color:#888;font-size:11px;letter-spacing:1px}
-  .hud-val{color:#0f0;font-weight:bold;min-width:40px;text-shadow:0 0 6px #0f0}
-  .hud-val.red{color:#f44;text-shadow:0 0 6px #f44}
-  .hud-val.gold{color:#fd0;text-shadow:0 0 6px #fd0}
-  #msg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;z-index:5;display:none;pointer-events:none}
-  #msg h1{font-size:36px;color:#0f0;text-shadow:0 0 20px #0f0,0 0 40px #0a0;margin-bottom:16px;letter-spacing:4px}
-  #msg h2{font-size:20px;color:#ff0;text-shadow:0 0 10px #ff0;margin-bottom:12px}
-  #msg p{color:#aaa;font-size:13px;line-height:1.8}
-  #msg .blink{animation:blink 1s infinite}
-  @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
-  .lives{display:flex;gap:4px}
-  .life-icon{width:14px;height:14px;background:#0f0;clip-path:polygon(50% 0%,100% 30%,100% 100%,0 100%,0 30%);box-shadow:0 0 4px #0f0}
-  .life-icon.dead{background:#333;box-shadow:none}
-  #level-up{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);color:#ff0;font-size:24px;font-weight:bold;text-shadow:0 0 20px #ff0;z-index:6;display:none;animation:fadeUp 1s ease-out forwards}
-  @keyframes fadeUp{0%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}100%{opacity:0;transform:translate(-50%,-150%) scale(1)}}
-  #minimap{position:absolute;bottom:4px;right:4px;width:80px;height:60px;border:1px solid #0f0;z-index:4;opacity:0.8;background:rgba(0,20,0,0.9)}
-  .hud-sep{width:1px;height:20px;background:#333;margin:0 4px}
-</style>
-</head>
-<body>
-<div id="wrap">
-  <div id="hud">
-    <div class="hud-item">
-      <span class="hud-label">SCORE</span>
-      <span class="hud-val" id="score">0</span>
-    </div>
-    <div class="hud-item">
-      <span class="hud-label">WAVE</span>
-      <span class="hud-val gold" id="wave">1</span>
-    </div>
-    <div class="hud-item">
-      <span class="hud-label">ENEMIES</span>
-      <span class="hud-val red" id="enemies">0</span>
-    </div>
-    <div class="hud-item">
-      <span class="hud-label">LEVEL</span>
-      <span class="hud-val" id="tank-level">1</span>
-    </div>
-    <div class="hud-item">
-      <span class="hud-label">LIVES</span>
-      <div class="lives" id="lives-display"></div>
-    </div>
-    <div class="hud-item">
-      <span class="hud-label">HI-SCORE</span>
-      <span class="hud-val gold" id="hiscore">0</span>
-    </div>
-  </div>
-  <canvas id="c"></canvas>
-  <div id="overlay"></div>
-  <div id="scanlines"></div>
-  <div id="msg">
-    <h1>坦克大战</h1>
-    <h2>BATTLE CITY</h2>
-    <p>玩家1: 方向键移动 | 空格射击</p>
-    <p>玩家2: WASD移动 | X射击 (双人模式)</p>
-    <p>按 ENTER 开始游戏</p>
-    <p class="blink" style="margin-top:16px;color:#0f0">[ PRESS ENTER ]</p>
-  </div>
-  <div id="level-up"></div>
-  <canvas id="minimap"></canvas>
-</div>
-<script>
-const W=800,H=600,TS=24,G=Math.floor(W/TS),HUD_H=36,GW=TS*G,GH=Math.floor((H-HUD_H)/TS);
+
+const W=800,H=600,TS=24,G=W/TS,HUD_H=36,GW=TS*G,GH=TS*(H-HUD_H)/TS;
 const canvas=document.getElementById('c');
 const ctx=canvas.getContext('2d');
 const mm=document.getElementById('minimap');
@@ -1249,6 +1172,3 @@ updateTankLevel();
 showStartScreen();
 generateMap(1);
 requestAnimationFrame(gameLoop);
-</script>
-</body>
-</html>

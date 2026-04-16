@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>坦克大战诊断</title>
+<style>
+body{background:#000;color:#0f0;font-family:monospace;padding:20px}
+.error{color:#f44}
+.success{color:#0f0}
+</style>
+</head>
+<body>
+<h1>坦克大战诊断</h1>
+<div id="log"></div>
+<canvas id="c" width="800" height="564" style="display:none"></canvas>
+<script>
+const log = document.getElementById('log');
+function addLog(msg, isError = false) {
+  const p = document.createElement('p');
+  p.textContent = msg;
+  p.className = isError ? 'error' : 'success';
+  log.appendChild(p);
+  console.log(msg);
+}
+
+try {
+  addLog('开始加载游戏脚本...');
+  
+  // Load the game script
+  const scriptText = `%%GAME_SCRIPT%%`;
+  
+  // First, check if we can parse it
+  try {
+    new Function(scriptText);
+    addLog('JavaScript 语法检查: 通过');
+  } catch(e) {
+    addLog('JavaScript 语法错误: ' + e.message, true);
+    throw e;
+  }
+  
+  // Now try to execute it
+  try {
+    eval(scriptText);
+    addLog('JavaScript 执行: 成功');
+  } catch(e) {
+    addLog('JavaScript 运行时错误: ' + e.message, true);
+    addLog('Stack: ' + e.stack, true);
+    throw e;
+  }
+  
+  addLog('游戏加载完成!');
+  addLog('gameState = ' + (typeof gameState !== 'undefined' ? gameState : 'undefined'));
+  addLog('player = ' + (typeof player !== 'undefined' ? (player ? 'exists' : 'null') : 'undefined'));
+  addLog('按 Enter 开始游戏...');
+  
+} catch(e) {
+  addLog('加载失败: ' + e.message, true);
+}
+</script>
+</body>
+</html>

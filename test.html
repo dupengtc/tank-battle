@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Test</title>
+</head>
+<body style="background:#000;color:#0f0;font-family:monospace;padding:20px">
+<h1 id="title">坦克大战测试</h1>
+<p id="status">按 Enter 开始...</p>
+<p id="info">等待输入...</p>
+<script>
+console.log('Script started');
+let gameState = 'start';
+const statusEl = document.getElementById('status');
+const infoEl = document.getElementById('info');
+
+document.addEventListener('keydown', e => {
+  console.log('Key pressed:', e.code);
+  infoEl.textContent = 'Key: ' + e.code;
+  
+  if (e.code === 'Enter') {
+    console.log('Enter pressed, gameState:', gameState);
+    if (gameState === 'start') {
+      gameState = 'playing';
+      statusEl.textContent = '游戏开始! 方向键移动, 空格射击';
+      statusEl.style.color = '#0f0';
+    }
+  }
+});
+
+console.log('Event listener added');
+</script>
+</body>
+</html>
