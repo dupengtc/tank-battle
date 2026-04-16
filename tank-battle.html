@@ -216,25 +216,65 @@ class Tank{
     }
 
     const dx=px-this.x,dy=py-this.y;
-    if(this.stuck>20){
+
+    // Type-based behavior patterns
+    const typePatterns={
+      0:()=>{this.speed=Math.min(1.2+wave*0.1,2.5);}, // Fast scout - prioritizes speed
+      1:()=>{this.speed=Math.min(1.6+wave*0.08,3.0);}, // Medium - balanced
+      2:()=>{this.speed=Math.min(0.8+wave*0.05,1.8);}, // Slow heavy - more accurate shooting
+      3:()=>{this.speed=Math.min(1.2+wave*0.1,2.2);}  // Standard - adaptive
+    };
+    if(typePatterns[this.type])typePatterns[this.type]();
+
+    // Smart obstacle avoidance - check ahead before moving
+    const aheadDir=(dir)=>{
+      const lookDist=TS*2;
+      let lx=this.cx,ly=this.cy;
+      if(dir===0)ly-=lookDist;
+      else if(dir===1)lx+=lookDist;
+      else if(dir===2)ly+=lookDist;
+      else lx-=lookDist;
+      const gx=Math.floor(lx/TS),gy=Math.floor((ly-HUD_H)/TS);
+      if(gx<0||gx>=G||gy<0||gy>=GH)return false;
+      return (bricks[gy]&&bricks[gy][gx]>0)||(steels[gy]&&steels[gy][gx]>0);
+    };
+
+    if(this.stuck>15){
       this.aiDir=(this.aiDir+2)%4;
       this.stuck=0;
     }
-    // Smart direction selection
-    if(this.aiTimer%8===0){
+    // Smart direction selection with obstacle avoidance
+    if(this.aiTimer%6===0){
       const absDx=Math.abs(dx),absDy=Math.abs(dy);
+      let preferredDir;
       if(absDx>absDy){
-        this.aiDir=dx>0?1:3;
+        preferredDir=dx>0?1:3;
       }else{
-        this.aiDir=dy>0?2:0;
+        preferredDir=dy>0?2:0;
       }
-      // Add some randomness to avoid predictable patterns
-      if(Math.random()<0.2){
-        this.aiDir=(this.aiDir+1)%4;
+      // If preferred direction is blocked, try alternatives
+      if(aheadDir(preferredDir)){
+        const alternatives=[(preferredDir+1)%4,(preferredDir+3)%4,(preferredDir+2)%4];
+        for(const alt of alternatives){
+          if(!aheadDir(alt)){this.aiDir=alt;break;}
+        }
+      }else{
+        this.aiDir=preferredDir;
+      }
+      // Type 2 (slow heavy) is more cautious - checks both axes
+      if(this.type===2&&aheadDir(this.aiDir)){
+        const otherAx=absDx>absDy?(dy>0?2:0):(dx>0?1:3);
+        if(!aheadDir(otherAx))this.aiDir=otherAx;
+      }
+      // Add randomness to avoid predictable patterns (varies by type)
+      const randChance=this.type===0?0.25:this.type===2?0.1:0.2;
+      if(Math.random()<randChance){
+        this.aiDir=(this.aiDir+[1,3][Math.floor(Math.random()*2)])%4;
       }
     }
-    // Shoot when has line of sight
-    if(this.aiTimer%20===0&&this.canShoot()&&this.hasLineOfSight(px,py)){
+    // Shoot when has line of sight - type 2 (heavy) shoots more frequently
+    const shootInterval=this.type===2?12:20;
+    if(this.aiTimer%shootInterval===0&&this.canShoot()&&this.hasLineOfSight(px,py)){
       const b=this.shoot();
       if(b)bullets.push(b);
     }

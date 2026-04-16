@@ -1,0 +1,114 @@
+# Tank Battle 30-Round Optimization Task
+
+## Mission
+You are Claude Code, an expert game developer. Your task is to perform **30 rounds of optimization** on the tank battle game located in this directory.
+
+## Game Location
+`C:\Users\Garu\.qclaw\workspace-agent-2e1ffa57\tank-battle\tank-battle.html`
+
+## Context
+The game is a single HTML file (~38KB) containing a Battle City / Tank Battle clone with:
+- Canvas-based rendering (800x600, tile size 24px)
+- 4 enemy tank types with AI
+- 2-player co-op mode
+- Power-up system (life, rapid fire, big bullet, shield, star upgrade)
+- Wave-based progression
+- Minimap, HUD, particle effects
+- 8-bit audio (Web Audio API)
+- CRT scanline effect overlay
+
+**Current known state:**
+- GH/G constant bug was just fixed (now G=33, GH=23)
+- Git repo initialized at `C:\Users\Garu\.qclaw\workspace-agent-2e1ffa57\tank-battle`
+- Remote: `https://github.com/dupengtc/tank-battle`
+- Branch: master
+- 4 commits already (including the bug fix)
+
+## Rules for Each Round
+
+1. **Read the current code** before making changes
+2. **Make meaningful, targeted improvements** — no trivial cosmetic changes
+3. **Test conceptually** — verify logic correctness before committing
+4. **Commit** with message format: `[Rnd-N] Category: Brief description`
+5. **Push** to GitHub after each commit
+6. **Log** the change to a round report
+
+## Round Categories (30 rounds)
+
+### Rounds 1-3: Core Gameplay Fixes
+1. **Enemy AI improvement** — Add obstacle avoidance (pathfinding around bricks/steels), smarter shooting when player is in line of sight, varied movement patterns per enemy type
+2. **Collision system polish** — Improve bullet-tank hit detection (add small hitbox padding), ensure bullets can't tunnel through fast movement, fix any edge-case collision bugs
+3. **Player respawn system** — Add spawn protection visual effect, prevent spawning inside obstacles, add brief invincibility period with visual indicator
+
+### Rounds 4-6: Visual Effects
+4. **Bullet impact effects** — Add spark particles on steel ricochet, debris particles on brick destruction, water splash effect
+5. **Tank damage/destruction** — Add tank "breaking apart" animation before explosion, smoke trail for damaged tanks, color flash on enemy hit
+6. **Particle system upgrade** — Add smoke/dust clouds on tank movement, add wall debris particles, add muzzle flash on shoot
+
+### Rounds 7-9: UI/UX Polish
+7. **HUD enhancement** — Add tank level indicator with visual icon, add score multiplier display, improve wave transition animation
+8. **Start screen improvements** — Add animated tank sprites on start screen, add game version number, improve menu visual hierarchy
+9. **Game over / victory screens** — Add stats display (time played, tanks destroyed, accuracy %), add "Share Score" hint, improve restart UX
+
+### Rounds 10-12: Audio System
+10. **Audio polish** — Add engine/idle hum sound for tanks, add water splashing sound, add menu navigation beeps
+11. **Dynamic audio** — Add background music loop (simple 8-bit chiptune), add wave-complete fanfare, add game over melody
+12. **Audio balance** — Balance all sound effect volumes, add mute toggle with visual indicator, add volume control for music vs SFX
+
+### Rounds 13-15: Power-up System
+13. **Power-up balance** — Adjust spawn rates per power-up type, make power-up effects duration balanced, add visual indicator of active power-ups in HUD
+14. **New power-up: Grenade** — Add Grenade power-up that destroys all enemies on screen (limited use), with dramatic explosion effect
+15. **Power-up counter** — Add count display for timed power-ups (shield timer bar, rapid fire counter), add warning when power-up about to expire
+
+### Rounds 16-18: Performance
+16. **Canvas optimization** — Batch similar draw calls, use integer coordinates for pixel-perfect rendering, avoid redundant state changes
+17. **Object pooling** — Implement object pools for bullets and particles to reduce GC pressure, pre-allocate array sizes
+18. **Animation frame management** — Implement delta-time based animation, add FPS counter (toggleable with F key), cap max entities on screen
+
+### Rounds 19-21: Game Mechanics
+19. **Scoring system upgrade** — Add combo multiplier (kills within 3s chain), add accuracy bonus, add wave clear bonus, add hi-score persistence (localStorage)
+20. **Wave difficulty scaling** — More enemies with higher speed per wave, smarter AI in later waves, introduce enemy tank types progressively
+21. **Shield mechanic upgrade** — Add shield power-up, visual shield bubble effect with reflection, shield can block 3 hits before breaking
+
+### Rounds 22-24: Map & Level Design
+22. **Map variety** — Add pre-designed map layouts (3-5 variants), randomly select map per wave, ensure base is always protectable
+23. **Map editor hint** — Add "Press E on start screen for map preview" hint, add simple map overview overlay during gameplay
+24. **Destructible base** — Add warning when base takes damage, add "Base Critical!" alert when base HP low, base can regenerate small amount
+
+### Rounds 25-27: Mobile & Accessibility
+25. **Mobile touch controls** — Add virtual joystick (left side) and fire button (right side) for mobile/touch devices, detect touch vs mouse automatically
+26. **Accessibility features** — Add high-contrast mode (toggle with H key), add colorblind-friendly enemy color coding, add screen reader hints
+27. **Keyboard shortcuts** — Add full keyboard shortcut system (P=pause, R=restart wave, M=mute, H=high contrast, 1-5=select power-up cheat)
+
+### Rounds 28-30: Polish & Signature
+28. **Screen effects** — Add vignette effect, add CRT curvature simulation, add screen reflection/glare effect, add battle damage overlay
+29. **Game feel ("juice")** — Add screen shake on explosions, add slow-motion on big kills, add hit-stop (brief pause) on bullet impact, add particle burst on level up
+30. **Final polish** — Add game logo/title animation, add credits screen, add easter egg (Konami code = 30 lives), optimize final bundle size
+
+## Auto-Notification
+
+After completing all 30 rounds, run this command to notify the parent agent:
+```
+openclaw system event --text "Tank Battle 30-round optimization COMPLETE. All rounds committed and pushed to GitHub." --mode now
+```
+
+## Report Format
+
+After each round, append to `C:\Users\Garu\.qclaw\workspace-agent-2e1ffa57\tank-battle\OPTIMIZATION_REPORT.md`:
+
+```
+### Round N: [Title]
+- **Category:** [Category]
+- **Changes:** [What was changed]
+- **Impact:** [Why it improves the game]
+- **Commit:** [Commit hash]
+```
+
+## Important Notes
+- Work in the tank-battle directory
+- Use `git add . && git commit -m "[Rnd-N] Category: Description" && git push` after each round
+- If you encounter a bug during optimization, fix it before continuing
+- Keep the game fun — don't over-nerf or over-buff anything
+- Do NOT delete any existing working features
+- Preserve the single-file HTML structure
+- Always maintain Chinese UI text (game is in Chinese)

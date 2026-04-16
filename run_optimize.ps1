@@ -1,0 +1,3 @@
+﻿Set-Location "C:\Users\Garu\.qclaw\workspace-agent-2e1ffa57\tank-battle"
+$env:CLAUDE_PRINT = "true"
+claude --permission-mode bypassPermissions --print "You are Claude Code, an expert game developer. Your task is in OPTIMIZE_TASK.md - read it first, then execute ALL 30 rounds of optimization. After each round: git add . && git commit -m `"[Rnd-N] Category: Description`" && git push. Append a round report to OPTIMIZATION_REPORT.md after each commit. When ALL 30 rounds are done, output `"TASK_COMPLETE: 30 rounds finished`" and run: openclaw system event --text `"Tank Battle 30-round optimization COMPLETE`" --mode now"
