@@ -130,6 +130,12 @@ let killCount=0,shotsFired=0,shotsHit=0,survivalTime=0;
 let restartPromptTimer=0;
 let killFlashTimer=0;
 
+// Weather system
+let weatherType=0; // 0=none, 1=rain, 2=snow
+let weatherParticles=[];
+let weatherTimer=0;
+const MAX_WEATHER=80;
+
 // Save system
 let unlockedLevels=parseInt(localStorage.getItem('tankUnlockedLevels'))||1;
 let savedHiScore=parseInt(localStorage.getItem('tankHiScore'))||0;
@@ -333,6 +339,73 @@ function spawnDust(x,y,dir){
     ctx.restore();
   };
   particles.push(p);
+}
+
+// Weather system
+function updateWeather(){
+  weatherTimer++;
+  // Change weather every 20-40 seconds
+  if(weatherTimer>1200+Math.random()*600){
+    weatherTimer=0;
+    weatherType=Math.floor(Math.random()*3); // 0=none, 1=rain, 2=snow
+    weatherParticles=[];
+  }
+  // Spawn weather particles
+  if(weatherType>0&&weatherParticles.length<MAX_WEATHER){
+    const x=Math.random()*GW;
+    const y=-5;
+    const speed=weatherType===1?(4+Math.random()*3):(1+Math.random()*1.5);
+    weatherParticles.push({
+      x:x,y:y,
+      vx:weatherType===1?1:0,
+      vy:speed,
+      life:60+Math.random()*60,
+      size:weatherType===1?(1+Math.random()):(2+Math.random()*2)
+    });
+  }
+  // Update particles
+  for(let i=weatherParticles.length-1;i>=0;i--){
+    const p=weatherParticles[i];
+    p.x+=p.vx;p.y+=p.vy;
+    p.life--;
+    if(p.life<=0||p.y>H){
+      weatherParticles.splice(i,1);
+    }
+  }
+}
+
+function drawWeather(){
+  if(weatherType===0)return;
+  ctx.save();
+  for(const p of weatherParticles){
+    const alpha=Math.min(1,p.life/30)*0.5;
+    ctx.globalAlpha=alpha;
+    if(weatherType===1){
+      // Rain
+      ctx.strokeStyle='#aaf';
+      ctx.lineWidth=p.size;
+      ctx.beginPath();
+      ctx.moveTo(p.x,p.y);
+      ctx.lineTo(p.x+p.vx*3,p.y+p.vy*3);
+      ctx.stroke();
+    }else{
+      // Snow
+      ctx.fillStyle='#fff';
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+  // Weather visibility effect
+  if(weatherType===2){
+    // Snow - slight dimming
+    ctx.save();
+    ctx.globalAlpha=0.1;
+    ctx.fillStyle='#fff';
+    ctx.fillRect(0,0,GW,H);
+    ctx.restore();
+  }
 }
 
 class Tank{
@@ -2089,6 +2162,7 @@ function gameLoop(ts){
   }
   updateBgParticles();
   updateMuteIndicator();
+  updateWeather();
   ctx.save();
   if(screenShake>0.5){
     ctx.translate((Math.random()-0.5)*screenShake*2,(Math.random()-0.5)*screenShake*2);
@@ -2126,6 +2200,7 @@ function gameLoop(ts){
     ctx.restore();
   }
   drawMinimap();
+  drawWeather();
 }
 
 // 开始画面背景粒子
