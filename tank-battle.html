@@ -97,6 +97,9 @@
   <canvas id="minimap"></canvas>
 </div>
 <script>
+/* =============================================================
+   MODULE: Constants & Configuration
+   ============================================================= */
 const W=800,H=600,TS=24,G=Math.floor(W/TS),HUD_H=36,GW=TS*G,GH=Math.floor((H-HUD_H)/TS);
 const canvas=document.getElementById('c');
 const ctx=canvas.getContext('2d');
@@ -105,6 +108,7 @@ const mmCtx=mm.getContext('2d');
 canvas.width=GW;canvas.height=H-HUD_H;
 mm.width=80;mm.height=60;
 
+// Game state
 let gameState='start',score=0,hiScore=0,lives=3,wave=1,enemiesLeft=0,totalEnemies=0,spawnQueue=[];
 let player,player2,enemies=[],bullets=[],explosions=[],powerups=[],particles=[],tankDebris=[];
 let bricks=[],steels=[],waters=[],forests=[],base;
@@ -112,23 +116,18 @@ let keys={},muted=localStorage.getItem('tankMuted')==='true';
 let lastShot=0,lastShotCd=350;
 let gameTime=0,spawnTimer=0,spawnInterval=120;
 let shieldTimer=0,rapidTimer=0,bigBulletTimer=0,grenadeCount=0;
-let puBlinkTimer=0; // 道具不足3秒闪烁计时
-// 连击系统
+let puBlinkTimer=0;
 let comboCount=0,comboTimer=0,comboMultiplier=1;
 let screenShake=0,flashTimer=0,flashColor='rgba(255,255,0,0.3)';
-// 游戏手感
 let slowMotionTimer=0,hitStopTimer=0;
 let audioCtx=null;
 let isTwoPlayer=false;
-
-// Game stats
 let killCount=0,shotsFired=0,shotsHit=0,survivalTime=0;
 let restartPromptTimer=0;
 
-// Bullet trail pool
+// Object pools
 const bulletTrailPool=[];
 const MAX_BULLET_TRAILS=100;
-// 对象池 - 性能优化
 const MAX_BULLETS=100;
 const MAX_PARTICLES=200;
 const bulletPool=[];
@@ -147,6 +146,9 @@ const C={
   pu:{life:'#f00',rapid:'#ff0',big:'#f80',shield:'#00f',star:'#0ff'}
 };
 
+/* =============================================================
+   MODULE: Audio System
+   ============================================================= */
 function initAudio(){
   if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
 }
@@ -192,7 +194,7 @@ function playLevelUp(){
 function playWin(){[500,600,800,1000,1200].forEach((f,i)=>setTimeout(()=>playTone(f,'square',0.12),i*100));}
 function playSplash(){playTone(120+Math.random()*40,'sine',0.12,0.08);}
 
-// 背景音乐系统
+/* Background Music System */
 let bgMusicPlaying=false;
 let bgMusicIntervalId=null;
 const bgMusicNotes=[262,294,330,349,392,440,494,523,494,440,392,349,330,294];
@@ -220,7 +222,6 @@ function playWaveFanfare(){
   fanfare.forEach((f,i)=>setTimeout(()=>playTone(f,'square',0.12,0.1),i*80));
   setTimeout(()=>playTone(1200,'square',0.25,0.12),400);
 }
-// 静音指示器
 let muteIndicatorTimer=0;
 function showMuteIndicator(){
   muteIndicatorTimer=60;
@@ -246,8 +247,10 @@ function updateMuteIndicator(){
   }
 }
 
+/* =============================================================
+   MODULE: Entity Classes (Tank, Bullet, Explosion, Particle, etc.)
+   ============================================================= */
 function spawnMuzzleFlash(x,y,dir){
-  // 枪口火焰粒子 - orange/yellow flash
   const colors=['#ff0','#f80','#f44','#fff'];
   const dirOffsets={0:{vx:0,vy:-1},1:{vx:1,vy:0},2:{vx:0,vy:1},3:{vx:-1,vy:0}};
   const offset=dirOffsets[dir];
@@ -274,7 +277,6 @@ function spawnMuzzleFlash(x,y,dir){
 }
 
 function spawnDust(x,y,dir){
-  // 移动尘土粒子 - gray/brown dust
   const dustColors=['#a08060','#806040','#605040','#909070'];
   const dirAngles={0:Math.PI/2,1:Math.PI,2:-Math.PI/2,3:0};
   const baseAngle=dirAngles[dir]+Math.PI+(Math.random()-0.5)*0.8;
@@ -819,6 +821,9 @@ class PowerUp{
   }
 }
 
+/* =============================================================
+   MODULE: Map Generation & Rendering
+   ============================================================= */
 function generateMap(wv){
   bricks=[];steels=[];waters=[];forests=[];
   for(let y=0;y<GH;y++){
@@ -1013,6 +1018,9 @@ function drawMap(){
   }
 }
 
+/* =============================================================
+   MODULE: Game Logic (Spawn, Wave, Collision)
+   ============================================================= */
 function spawnEnemy(){
   const types=[0,1,2,3];
   const type=types[Math.floor(Math.random()*types.length)];
@@ -1200,6 +1208,9 @@ function showLevelUp(lv){
   setTimeout(()=>el.style.display='none',1000);
 }
 
+/* =============================================================
+   MODULE: HUD & UI Updates
+   ============================================================= */
 function updateHUD(){
   document.getElementById('score').textContent=formatScore(score);
   document.getElementById('wave').textContent=wave;
@@ -1326,6 +1337,9 @@ function updateTankLevel(){
   }
 }
 
+/* =============================================================
+   MODULE: Input Handling
+   ============================================================= */
 function handlePlayerInput(){
   if(!player||!player.alive)return;
 
@@ -1414,6 +1428,9 @@ function respawnPlayer2(){
   player2.level=Math.max(1,player2.level);
 }
 
+/* =============================================================
+   MODULE: Game State Management
+   ============================================================= */
 function startGame(twoPlayer=false){
   initAudio();
   stopBgParticles();
@@ -1581,6 +1598,9 @@ function drawRipples(){
   }
 }
 
+/* =============================================================
+   MODULE: Rendering (draw functions)
+   ============================================================= */
 function draw(){
   ctx.fillStyle='#1a1a1a';
   ctx.fillRect(0,0,GW,H);
@@ -1598,6 +1618,9 @@ function draw(){
   bullets.forEach(b=>{if(b.x>-margin&&b.x<GW+margin&&b.y>-margin&&b.y<H+margin)b.draw();});
 }
 
+/* =============================================================
+   MODULE: Game Loop & Rendering
+   ============================================================= */
 function update(){
   if(gameState!=='playing')return;
   gameTime++;
@@ -1775,6 +1798,9 @@ function update(){
   particles=particles.filter(p=>p.alive);
 }
 
+/* =============================================================
+   MODULE: Main Game Loop
+   ============================================================= */
 let lastTime=0;
 let fps=0,fpsFrames=0,fpsTimer=0,showFps=false;
 let highContrast=false;
@@ -1886,6 +1912,9 @@ function showStartScreen(){
   startBgParticles();
 }
 
+/* =============================================================
+   MODULE: Event Listeners & Initialization
+   ============================================================= */
 document.addEventListener('keydown',e=>{
   keys[e.code]=true;
   if(e.code==='Enter'){
