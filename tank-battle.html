@@ -133,6 +133,7 @@ let puBlinkTimer=0;
 let comboCount=0,comboTimer=0,comboMultiplier=1;
 let screenShake=0,flashTimer=0,flashColor='rgba(255,255,0,0.3)';
 let slowMotionTimer=0,hitStopTimer=0;
+let frozenTimer=0; // Frozen effect - slows all enemies
 let audioCtx=null;
 let isTwoPlayer=false;
 let mines=[];
@@ -376,7 +377,7 @@ const C={
   enemy:['#c00','#c60','#c30','#933'],
   player:'#4a4',playerDark:'#383',
   exp:['#fff','#ff0','#f80','#f00','#800'],
-  pu:{life:'#f00',rapid:'#ff0',big:'#f80',shield:'#00f',star:'#0ff'}
+  pu:{life:'#f00',rapid:'#ff0',big:'#f80',shield:'#00f',star:'#0ff',frozen:'#0ef'}
 };
 
 /* =============================================================
@@ -1606,9 +1607,9 @@ function spawnEnemy(){
 function spawnPowerup(x,y){
   // Balance: reduce powerup spawn rate
   if(Math.random()>0.3)return;
-  const types=['life','rapid','big','shield','star','grenade','mine'];
+  const types=['life','rapid','big','shield','star','grenade','mine','frozen'];
   // Weighted selection
-  const weights=[0.1,0.18,0.18,0.1,0.16,0.14,0.14];
+  const weights=[0.1,0.16,0.16,0.08,0.14,0.12,0.12,0.12];
   let r=Math.random(),cum=0;
   let type='star';
   for(let i=0;i<types.length;i++){
@@ -1741,7 +1742,7 @@ function checkBaseHit(b){
 
 function applyPowerup(pu,tank){
   playPowerup();
-  const puFlashColors={life:'rgba(255,0,0,0.3)',rapid:'rgba(255,255,0,0.3)',big:'rgba(255,128,0,0.3)',shield:'rgba(0,0,255,0.3)',star:'rgba(0,255,255,0.3)',grenade:'rgba(0,255,0,0.3)',mine:'rgba(255,0,255,0.3)'};
+  const puFlashColors={life:'rgba(255,0,0,0.3)',rapid:'rgba(255,255,0,0.3)',big:'rgba(255,128,0,0.3)',shield:'rgba(0,0,255,0.3)',star:'rgba(0,255,255,0.3)',grenade:'rgba(0,255,0,0.3)',mine:'rgba(255,0,255,0.3)',frozen:'rgba(0,200,255,0.4)'};
   if(puFlashColors[pu]){
     flashTimer=10;
     flashColor=puFlashColors[pu];
@@ -1770,6 +1771,8 @@ function applyPowerup(pu,tank){
     grenadeCount++;
   }else if(pu==='mine'){
     mineCount++;
+  }else if(pu==='frozen'){
+    frozenTimer=Math.min(frozenTimer+300,600); // 冻结敌人5-10秒
   }
 }
 
@@ -2459,8 +2462,29 @@ function update(){
   if(player)player.updatePhysics();
   if(player2&&player2.alive)player2.updatePhysics();
 
-  // Enemy AI
-  enemies.forEach(e=>e.ai());
+  // Frozen effect timer
+  if(frozenTimer>0){
+    frozenTimer--;
+    // Visual frozen effect overlay
+    ctx.save();
+    ctx.globalAlpha=0.1;
+    ctx.fillStyle='#0cf';
+    ctx.fillRect(0,0,GW,H);
+    ctx.restore();
+  }
+
+  // Enemy AI (affected by frozen timer)
+  enemies.forEach(e=>{
+    if(frozenTimer>0){
+      // Slow down frozen enemies
+      const originalSpeed=e.speed;
+      e.speed*=0.3;
+      e.ai();
+      e.speed=originalSpeed;
+    }else{
+      e.ai();
+    }
+  });
 
   // Update bullets
   bullets.forEach(b=>b.update());
