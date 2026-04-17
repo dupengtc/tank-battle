@@ -7,8 +7,8 @@
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{background:#000;display:flex;justify-content:center;align-items:center;min-height:100vh;overflow:hidden;font-family:'Courier New',monospace}
-  #wrap{position:relative;display:inline-block}
-  #c{background:#000;display:block;image-rendering:pixelated;border:2px solid #333}
+  #wrap{position:relative;display:inline-block;transform-origin:center}
+  #c{background:#000;display:block;image-rendering:pixelated;border:2px solid #333;box-shadow:0 0 40px rgba(0,255,0,0.2)}
   #overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.03);pointer-events:none;z-index:2;
     background-image:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.08) 2px,rgba(0,0,0,0.08) 4px)}
   #scanlines{position:absolute;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.15),rgba(0,0,0,0.15) 1px,transparent 1px,transparent 2px);pointer-events:none;z-index:3;opacity:0.4}
@@ -87,6 +87,10 @@
       <span class="hud-label">HI-SCORE</span>
       <span class="hud-val gold" id="hiscore">0</span>
     </div>
+    <div class="hud-item">
+      <span class="hud-label">BASE</span>
+      <span class="hud-val" id="base-hp" style="color:#daa520;text-shadow:0 0 6px #daa520">3</span>
+    </div>
     <div id="powerup-status" style="display:flex;gap:6px;align-items:center;margin-left:8px"></div>
   </div>
   <canvas id="c"></canvas>
@@ -120,6 +124,7 @@ mm.width=80;mm.height=60;
 let gameState='start',score=0,hiScore=0,lives=3,wave=1,enemiesLeft=0,totalEnemies=0,spawnQueue=[];
 let player,player2,enemies=[],bullets=[],explosions=[],powerups=[],particles=[],tankDebris=[],damageNumbers=[],tireTrails=[];
 let bricks=[],steels=[],waters=[],forests=[],base;
+let muds=[],ices=[],cliffs=[],bridges=[]; // New terrain types
 let keys={},muted=localStorage.getItem('tankMuted')==='true';
 let lastShot=0,lastShotCd=350;
 let gameTime=0,spawnTimer=0,spawnInterval=120;
@@ -161,6 +166,24 @@ let selectedLevel=1;
 if(savedHiScore>hiScore)hiScore=savedHiScore;
 loadAchievements();
 loadCareerStats();
+
+// Fullscreen scaling - make game fill the entire screen
+let scale=1;
+function resizeGame(){
+  const wrap=document.getElementById('wrap');
+  if(!wrap)return;
+  const screenW=window.innerWidth;
+  const screenH=window.innerHeight;
+  const gameW=800;
+  const gameH=600;
+  scale=Math.min(screenW/gameW,screenH/gameH)*0.95;
+  scale=Math.max(0.5,Math.min(scale,3));
+  wrap.style.transform='scale('+scale+')';
+  wrap.style.left=Math.max(0,(screenW-gameW*scale)/2)+'px';
+  wrap.style.top=Math.max(0,(screenH-gameH*scale)/2)+'px';
+}
+window.addEventListener('resize',resizeGame);
+setTimeout(resizeGame,100);
 
 // Save game data
 function saveGameData(){
@@ -346,6 +369,8 @@ const C={
   steel:'#708090',steelLight:'#a9a9a9',
   water:'#1a5',waterDark:'#148',
   forest:'#2d5',grass:'#234',
+  mud:'#634',mudDark:'#421',ice:'#aef',iceDark:'#8cf',
+  cliff:'#222',cliffDark:'#111',bridge:'#a52a2a',bridgeDark:'#631',
   base:'#daa520',baseDark:'#b8860b',
   bullet:'#ff0',bulletBig:'#f80',
   enemy:['#c00','#c60','#c30','#933'],
@@ -621,7 +646,8 @@ class Tank{
     if(gx<0||gx>=G||gy<0||gy>=GH)return true;
     if(bricks[gy]&&bricks[gy][gx]>0)return true;
     if(steels[gy]&&steels[gy][gx]>0)return true;
-    if(waters[gy]&&waters[gy][gx]>0)return true;
+    if(waters[gy]&&waters[gy][gx]>0&&(!bridges[gy]||bridges[gy][gx]===0))return true;
+    if(cliffs[gy]&&cliffs[gy][gx]>0)return true;
     return false;
   }
   canMove(tx,ty){
@@ -644,9 +670,14 @@ class Tank{
   }
   updatePhysics(){
     if(!this.alive)return;
-    // Apply friction
-    this.vx*=this.friction;
-    this.vy*=this.friction;
+    // Apply terrain effects (mud slows, ice slides)
+    const gx=Math.floor(this.x/TS),gy=Math.floor((this.y-HUD_H)/TS);
+    let terrainFriction=1.0;
+    if(muds[gy]&&muds[gy][gx]>0)terrainFriction=0.7; // Mud slows down
+    if(ices[gy]&&ices[gy][gx]>0)terrainFriction=1.05; // Ice is slippery
+    // Apply friction with terrain modifier
+    this.vx*=this.friction*terrainFriction;
+    this.vy*=this.friction*terrainFriction;
     // Clamp velocity
     const speed=Math.sqrt(this.vx*this.vx+this.vy*this.vy);
     if(speed>this.maxSpeed){
@@ -827,6 +858,15 @@ class Tank{
     // Tank shadow
     ctx.fillStyle='rgba(0,0,0,0.3)';
     ctx.fillRect(2,2,TS-2,TS-2);
+
+    // Tank glow effect for players
+    if(this.isPlayer||this.isPlayer2){
+      ctx.shadowColor=this.isPlayer?'#4a4':'#44d';
+      ctx.shadowBlur=8;
+    }else{
+      ctx.shadowColor=this.tankColor;
+      ctx.shadowBlur=4;
+    }
 
     let col=this.tankColor;
     // 被击中红色闪烁效果
@@ -1260,7 +1300,7 @@ function generateMap(wv){
   for(let y=0;y<GH;y++){
     bricks[y]=[];steels[y]=[];waters[y]=[];forests[y]=[];
     for(let x=0;x<G;x++){
-      bricks[y][x]=0;steels[y][x]=0;waters[y][x]=0;forests[y][x]=0;
+      bricks[y][x]=0;steels[y][x]=0;waters[y][x]=0;forests[y][x]=0;muds[y][x]=0;ices[y][x]=0;cliffs[y][x]=0;bridges[y][x]=0;
     }
   }
   const bG=G*TS/TS,bH=GH;
@@ -1357,6 +1397,57 @@ function generateMap(wv){
     }
   }
 
+  // Mud terrain (slows tanks) - wave 4+
+  if(wv>=4){
+    for(let i=0;i<4;i++){
+      const mx=Math.floor(Math.random()*(bG-4))+2;
+      const my=Math.floor(Math.random()*(bH-6))+3;
+      for(let dy=0;dy<2;dy++){
+        for(let dx=0;dx<2;dx++){
+          if(my+dy<bH&&mx+dx<bG)muds[my+dy][mx+dx]=1;
+        }
+      }
+    }
+  }
+
+  // Ice terrain (sliding) - wave 5+
+  if(wv>=5){
+    for(let i=0;i<3;i++){
+      const ix=Math.floor(Math.random()*(bG-4))+2;
+      const iy=Math.floor(Math.random()*(bH-6))+3;
+      for(let dy=0;dy<2;dy++){
+        for(let dx=0;dx<2;dx++){
+          if(iy+dy<bH&&ix+dx<bG)ices[iy+dy][ix+dx]=1;
+        }
+      }
+    }
+  }
+
+  // Cliff terrain (impassable) - wave 6+
+  if(wv>=6){
+    for(let i=0;i<2;i++){
+      const cx=Math.floor(Math.random()*(bG-4))+2;
+      const cy=Math.floor(Math.random()*(bH-6))+3;
+      if(cy<bH&&cx<bG)cliffs[cy][cx]=1;
+    }
+  }
+
+  // Bridge terrain (over water) - wave 7+
+  if(wv>=7&&wv>=2){
+    for(let i=0;i<2;i++){
+      const bx=Math.floor(Math.random()*(bG-4))+2;
+      const by=Math.floor(Math.random()*(bH-6))+3;
+      for(let dy=0;dy<2;dy++){
+        for(let dx=0;dx<2;dx++){
+          if(by+dy<bH&&bx+dx<bG&&waters[by+dy]&&waters[by+dy][bx+dx]){
+            bridges[by+dy][bx+dx]=1;
+            waters[by+dy][bx+dx]=0;
+          }
+        }
+      }
+    }
+  }
+
   // Clear base area again
   const baseTX=Math.floor(G/2)-1;
   const baseTY=GH-2;
@@ -1365,9 +1456,12 @@ function generateMap(wv){
       bricks[baseTY+dy][baseTX+dx]=0;
       steels[baseTY+dy][baseTX+dx]=0;
       waters[baseTY+dy][baseTX+dx]=0;
+      muds[baseTY+dy][baseTX+dx]=0;
+      ices[baseTY+dy][baseTX+dx]=0;
+      cliffs[baseTY+dy][baseTX+dx]=0;
     }
   }
-  base={x:baseTX*TS,y:baseTY*TS+HUD_H,alive:true};
+  base={x:baseTX*TS,y:baseTY*TS+HUD_H,alive:true,hp:3};
 }
 
 function drawMap(){
@@ -1421,6 +1515,38 @@ function drawMap(){
           ctx.fillStyle=C.forest;
         }
       }
+      if(muds[y]&&muds[y][x]>0){
+        ctx.fillStyle=C.mud;
+        ctx.fillRect(px,py,TS,TS);
+        ctx.fillStyle=C.mudDark;
+        ctx.fillRect(px+3,py+3,TS-6,TS-6);
+        ctx.fillRect(px+6,py+6,TS-12,TS-12);
+      }
+      if(ices[y]&&ices[y][x]>0){
+        ctx.fillStyle=C.ice;
+        ctx.fillRect(px,py,TS,TS);
+        ctx.fillStyle=C.iceDark;
+        const shimmer=Date.now()/200;
+        ctx.fillRect(px+2,py+Math.sin(shimmer+x)*2,TS-4,2);
+        ctx.fillRect(px+Math.sin(shimmer+x+1)*2,py+TS/2,2,TS/2);
+      }
+      if(cliffs[y]&&cliffs[y][x]>0){
+        ctx.fillStyle=C.cliff;
+        ctx.fillRect(px,py,TS,TS);
+        ctx.fillStyle=C.cliffDark;
+        ctx.fillRect(px+2,py+2,TS-4,TS-4);
+        ctx.strokeStyle='#000';
+        ctx.lineWidth=2;
+        ctx.strokeRect(px+1,py+1,TS-2,TS-2);
+      }
+      if(bridges[y]&&bridges[y][x]>0){
+        ctx.fillStyle=C.bridge;
+        ctx.fillRect(px,py,TS,TS);
+        ctx.fillStyle=C.bridgeDark;
+        ctx.fillRect(px+2,py+2,TS-4,TS-4);
+        ctx.fillStyle='#ddd';
+        ctx.fillRect(px+4,py+TS/2-1,TS-8,2);
+      }
     }
   }
   if(base&&base.alive){
@@ -1469,8 +1595,8 @@ function spawnEnemy(){
   if(waveRageMode)baseSpeed*=1.5;
   enemy.speed=baseSpeed;
   enemy.maxSpeed=baseSpeed;
-  // Difficulty affects enemy HP
-  enemy.hp=Math.floor((2-enemy.type)*difficultyModifier);
+  // Difficulty affects enemy HP (min 1 HP)
+  enemy.hp=Math.max(1,Math.floor((3-enemy.type)*difficultyModifier));
   enemy.maxHp=enemy.hp;
   enemy.tankColor=colors[type];
   enemy.aiDir=2;
@@ -1656,6 +1782,14 @@ function updateHUD(){
   document.getElementById('wave').textContent=wave;
   document.getElementById('enemies').textContent=enemiesLeft;
   document.getElementById('hiscore').textContent=formatScore(hiScore);
+  // Base HP display
+  const baseHpEl=document.getElementById('base-hp');
+  if(baseHpEl&&base){
+    baseHpEl.textContent=base.hp||3;
+    if(base.hp===2)baseHpEl.style.color='#f80';
+    else if(base.hp===1)baseHpEl.style.color='#f00';
+    else baseHpEl.style.color='#daa520';
+  }
   // Time display
   const timeEl=document.getElementById('wave-time');
   if(timeEl){
@@ -2326,7 +2460,7 @@ function update(){
   // Bullet collisions
   for(const b of bullets){
     if(checkBulletCollision(b)){b.alive=false;continue;}
-    if(checkBaseHit(b)){b.alive=false;base.alive=false;playExplode(true);createExplosion(base.x+TS,base.y+TS,true);gameOver(false);return;}
+    if(checkBaseHit(b)){b.alive=false;playHit();createExplosion(b.x,b.y,true);base.hp--;updateHUD();if(base.hp<=0){base.alive=false;playExplode(true);createExplosion(base.x+TS,base.y+TS,true);gameOver(false);return;}}
 
     // Player bullets hit enemies
     if(b.isPlayer||b.isPlayer2){
