@@ -85,7 +85,7 @@ canvas.width=GW;canvas.height=H-HUD_H;
 mm.width=80;mm.height=60;
 
 let gameState='start',score=0,hiScore=0,lives=3,wave=1,enemiesLeft=0,totalEnemies=0,spawnQueue=[];
-let player,player2,enemies=[],bullets=[],explosions=[],powerups=[],particles=[];
+let player,player2,enemies=[],bullets=[],explosions=[],powerups=[],particles=[],tankDebris=[];
 let bricks=[],steels=[],waters=[],forests=[],base;
 let keys={},muted=false;
 let lastShot=0,lastShotCd=350;
@@ -147,6 +147,7 @@ class Tank{
     this.tankColor=isPlayer?C.player:(isPlayer2?'#44d':C.enemy[0]);
     this.shootCount=0;
     this.flashTimer=0;
+    this.flashRed=0; // 红色闪烁计时器
   }
   get cx(){return this.x+TS/2}
   get cy(){return this.y+TS/2}
@@ -321,7 +322,11 @@ class Tank{
       ctx.stroke();
       ctx.restore();
     }
-    // Flash effect when hit
+    // Flash effect when hit - 红色闪烁
+    if(this.flashRed>0){
+      ctx.globalAlpha=0.6+0.4*Math.abs(Math.sin(this.flashRed/2));
+    }
+    // Flash effect when hit (damage flash)
     if(this.flashTimer>0){
       ctx.globalAlpha=0.7;
     }
@@ -333,7 +338,11 @@ class Tank{
     ctx.fillStyle='rgba(0,0,0,0.3)';
     ctx.fillRect(2,2,TS-2,TS-2);
 
-    const col=this.tankColor;
+    let col=this.tankColor;
+    // 被击中红色闪烁效果
+    if(this.flashRed>0){
+      col='#f44';
+    }
     const dark=this.isPlayer||this.isPlayer2?(this.isPlayer?C.playerDark:'#339'):this.tankColor;
 
     // Tank body with level-based detail
@@ -405,6 +414,7 @@ class Tank{
 
     // Update flash timer
     if(this.flashTimer>0)this.flashTimer--;
+    if(this.flashRed>0)this.flashRed--;
   }
   drawMinimap(){
     if(!this.alive)return;
@@ -556,6 +566,56 @@ class Particle{
     ctx.fillStyle=this.col;
     const s=Math.floor(this.size*(this.life/this.maxLife)+1);
     ctx.fillRect(Math.floor(this.x),Math.floor(this.y),s,s);
+    ctx.restore();
+  }
+}
+
+// 坦克裂解碎片类
+class TankDebris{
+  constructor(x,y,dir,tankColor){
+    this.x=x;this.y=y;this.dir=dir;this.tankColor=tankColor;
+    this.frame=0;this.maxFrame=15; // 0.25秒 @ 60fps
+    this.alive=true;
+    this.w=TS/2;this.h=TS/2;
+    // 4个碎片向外扩散
+    const angles=[Math.PI*0.25,Math.PI*0.75,Math.PI*1.25,Math.PI*1.75];
+    this.pieces=angles.map((angle,i)=>({
+      offsetX:(i%2===0?-1:1)*TS/4,
+      offsetY:(i<2?-1:1)*TS/4,
+      angle:angle,
+      speed:4+Math.random()*2,
+      rotation:Math.random()*Math.PI*2,
+      rotSpeed:(Math.random()-0.5)*0.3
+    }));
+  }
+  update(){
+    this.frame++;
+    if(this.frame>=this.maxFrame)this.alive=false;
+    // 更新碎片位置
+    const progress=this.frame/this.maxFrame;
+    for(const p of this.pieces){
+      p.offsetX+=Math.cos(p.angle)*p.speed*(1-progress);
+      p.offsetY+=Math.sin(p.angle)*p.speed*(1-progress);
+      p.rotation+=p.rotSpeed;
+    }
+  }
+  draw(){
+    const progress=this.frame/this.maxFrame;
+    ctx.save();
+    ctx.globalAlpha=1-progress*0.5;
+    for(const p of this.pieces){
+      const px=this.x+p.offsetX;
+      const py=this.y+p.offsetY;
+      ctx.save();
+      ctx.translate(px,py);
+      ctx.rotate(p.rotation);
+      ctx.fillStyle=this.tankColor;
+      ctx.fillRect(-this.w/2,-this.h/2,this.w,this.h);
+      // 碎片边缘
+      ctx.fillStyle='rgba(0,0,0,0.3)';
+      ctx.fillRect(-this.w/2+2,-this.h/2+2,this.w-4,2);
+      ctx.restore();
+    }
     ctx.restore();
   }
 }
@@ -1081,7 +1141,7 @@ function respawnPlayer2(){
 function startGame(twoPlayer=false){
   initAudio();
   score=0;lives=3;wave=1;
-  enemies=[];bullets=[];explosions=[];powerups=[];particles=[];
+  enemies=[];bullets=[];explosions=[];powerups=[];particles=[];tankDebris=[];
   spawnQueue=[];
   shieldTimer=0;rapidTimer=0;bigBulletTimer=0;
   isTwoPlayer=twoPlayer;
@@ -1118,7 +1178,7 @@ function startGame(twoPlayer=false){
 
 function nextWave(){
   wave++;
-  enemies=[];bullets=[];explosions=[];powerups=[];particles=[];
+  enemies=[];bullets=[];explosions=[];powerups=[];particles=[];tankDebris=[];
   generateMap(wave);
 
   const baseTX=Math.floor(G/2)-1;
@@ -1233,6 +1293,7 @@ function draw(){
   drawRipples();
   powerups.forEach(p=>p.draw());
   explosions.forEach(e=>e.draw());
+  tankDebris.forEach(d=>d.draw());
   particles.forEach(p=>p.draw());
   enemies.forEach(e=>e.draw());
   if(player&&player.alive)player.draw();
@@ -1306,11 +1367,12 @@ function update(){
       for(const e of enemies){
         if(e.alive&&checkTankHit(b,e)){
           b.alive=false;
+          // 坦克裂解动画
+          tankDebris.push(new TankDebris(e.x+TS/2,e.y+TS/2,e.dir,e.tankColor));
           e.alive=false;
-          e.flashTimer=5;
           score+=100*(e.type+1);
           playExplode();
-          createExplosion(e.cx,e.cy,false);
+          createExplosion(e.cx,e.cy,true); // 大爆炸
           spawnPowerup(e.x,e.y);
           enemiesLeft=Math.max(0,enemiesLeft-1);
           updateHUD();
@@ -1393,6 +1455,8 @@ function update(){
   // Update explosions and particles
   explosions.forEach(e=>e.update());
   explosions=explosions.filter(e=>e.alive);
+  tankDebris.forEach(d=>d.update());
+  tankDebris=tankDebris.filter(d=>d.alive);
   particles.forEach(p=>p.update());
   particles=particles.filter(p=>p.alive);
 }
