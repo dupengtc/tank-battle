@@ -545,8 +545,15 @@ function updateWeather(){
   // Change weather every 20-40 seconds
   if(weatherTimer>1200+Math.random()*600){
     weatherTimer=0;
+    const prevWeather=weatherType;
     weatherType=Math.floor(Math.random()*3); // 0=none, 1=rain, 2=snow
     weatherParticles=[];
+    // Weather change sound
+    if(weatherType===1&&!muted){
+      playTone(200,'sine',0.1,0.1); // Rain starting
+    }else if(weatherType===2&&!muted){
+      playTone(400,'sine',0.15,0.08); // Snow starting
+    }
   }
   // Spawn weather particles
   if(weatherType>0&&weatherParticles.length<MAX_WEATHER){
@@ -1639,6 +1646,10 @@ function spawnEnemy(){
   // Boss wave every 5 waves
   const isBossWave=wave%5===0&&enemiesLeft===totalEnemies;
   if(isBossWave){
+    // Boss warning siren
+    if(!muted){
+      [300,350,300,400].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',0.2,0.15),i*100));
+    }
     // Spawn boss in center
     const boss=new Tank(GW/2-TS,-TS,2,false);
     boss.type=4; // Boss type
