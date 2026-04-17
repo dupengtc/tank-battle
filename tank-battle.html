@@ -61,6 +61,11 @@
       <span class="hud-val" id="tank-level">1</span>
       <span id="tank-stars" style="color:#ff0;text-shadow:0 0 6px #ff0;font-size:12px;margin-left:-4px">★</span>
     </div>
+    <div class="hud-item" id="combo-display" style="display:none">
+      <span class="hud-label">COMBO</span>
+      <span class="hud-val gold" id="combo-count">0</span>
+      <span class="hud-val" id="combo-mult" style="color:#f0f">x1</span>
+    </div>
     <div class="hud-item">
       <span class="hud-label">LIVES</span>
       <div class="lives" id="lives-display"></div>
@@ -102,6 +107,8 @@ let lastShot=0,lastShotCd=350;
 let gameTime=0,spawnTimer=0,spawnInterval=120;
 let shieldTimer=0,rapidTimer=0,bigBulletTimer=0,grenadeCount=0;
 let puBlinkTimer=0; // 道具不足3秒闪烁计时
+// 连击系统
+let comboCount=0,comboTimer=0,comboMultiplier=1;
 let screenShake=0,flashTimer=0,flashColor='rgba(255,255,0,0.3)';
 let audioCtx=null;
 let isTwoPlayer=false;
@@ -1191,6 +1198,17 @@ function updateHUD(){
   document.getElementById('enemies').textContent=enemiesLeft;
   document.getElementById('hiscore').textContent=formatScore(hiScore);
   updatePowerupStatus();
+  // 连击显示
+  const comboEl=document.getElementById('combo-display');
+  if(comboEl){
+    if(comboCount>0){
+      comboEl.style.display='flex';
+      document.getElementById('combo-count').textContent=comboCount;
+      document.getElementById('combo-mult').textContent=`x${comboMultiplier}`;
+    }else{
+      comboEl.style.display='none';
+    }
+  }
 }
 
 // 道具状态显示
@@ -1241,7 +1259,7 @@ function useGrenade(){
       tankDebris.push(new TankDebris(e.x+TS/2,e.y+TS/2,e.dir,e.tankColor));
       e.alive=false;
       createExplosion(e.cx,e.cy,true);
-      score+=100*(e.type+1);
+      score+=100*(e.type+1)*comboMultiplier;
       killCount++;
       enemiesLeft=Math.max(0,enemiesLeft-1);
     }
@@ -1396,7 +1414,7 @@ function startGame(twoPlayer=false){
   spawnQueue=[];
   shieldTimer=0;rapidTimer=0;bigBulletTimer=0;
   isTwoPlayer=twoPlayer;
-  killCount=0;shotsFired=0;shotsHit=0;survivalTime=0;restartPromptTimer=0;grenadeCount=0;
+  killCount=0;shotsFired=0;shotsHit=0;survivalTime=0;restartPromptTimer=0;grenadeCount=0;comboCount=0;comboTimer=0;comboMultiplier=1;
 
   generateMap(wave);
   const baseTX=Math.floor(G/2)-1;
@@ -1577,6 +1595,14 @@ function update(){
   gameTime++;
   if(flashTimer>0)flashTimer--;
   if(screenShake>0)screenShake*=0.85;
+  // 连击计时
+  if(comboTimer>0){
+    comboTimer--;
+    if(comboTimer<=0){
+      comboCount=0;
+      comboMultiplier=1;
+    }
+  }
 
   // Sync shield timer to player
   if(player){
@@ -1643,7 +1669,13 @@ function update(){
           // 坦克裂解动画
           tankDebris.push(new TankDebris(e.x+TS/2,e.y+TS/2,e.dir,e.tankColor));
           e.alive=false;
-          score+=100*(e.type+1);
+          // 连击系统
+          comboCount++;
+          comboTimer=180; // 3秒 @ 60fps
+          if(comboCount>=10)comboMultiplier=3;
+          else if(comboCount>=5)comboMultiplier=2;
+          else if(comboCount>=3)comboMultiplier=1.5;
+          score+=100*(e.type+1)*comboMultiplier;
           playExplode();
           createExplosion(e.cx,e.cy,true); // 大爆炸
           spawnPowerup(e.x,e.y);
