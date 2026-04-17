@@ -51,6 +51,7 @@
     <div class="hud-item">
       <span class="hud-label">LEVEL</span>
       <span class="hud-val" id="tank-level">1</span>
+      <span id="tank-stars" style="color:#ff0;text-shadow:0 0 6px #ff0;font-size:12px;margin-left:-4px">★</span>
     </div>
     <div class="hud-item">
       <span class="hud-label">LIVES</span>
@@ -1085,10 +1086,34 @@ function showLevelUp(lv){
 }
 
 function updateHUD(){
-  document.getElementById('score').textContent=score;
+  document.getElementById('score').textContent=formatScore(score);
   document.getElementById('wave').textContent=wave;
   document.getElementById('enemies').textContent=enemiesLeft;
-  document.getElementById('hiscore').textContent=hiScore;
+  document.getElementById('hiscore').textContent=formatScore(hiScore);
+}
+
+function formatScore(s){
+  return s.toString().replace(/\B(?=(\d{3})+(?!\d))/g,',');
+}
+
+// 得分放大动画
+let scorePopTimer=0;
+let lastScoreDisplay=0;
+function animateScoreGain(){
+  const scoreEl=document.getElementById('score');
+  if(score>lastScoreDisplay){
+    scorePopTimer=15;
+    lastScoreDisplay=score;
+  }
+  if(scorePopTimer>0){
+    const scale=1+scorePopTimer/15*0.3;
+    scoreEl.style.transform=`scale(${scale})`;
+    scoreEl.style.color='#ff0';
+    scorePopTimer--;
+  }else{
+    scoreEl.style.transform='scale(1)';
+    scoreEl.style.color='';
+  }
 }
 
 function updateLivesDisplay(){
@@ -1104,6 +1129,13 @@ function updateLivesDisplay(){
 function updateTankLevel(){
   const lvl=player?player.level:1;
   document.getElementById('tank-level').textContent=lvl;
+  // Update stars display (max 3 stars)
+  const starsEl=document.getElementById('tank-stars');
+  if(starsEl){
+    let stars='';
+    for(let i=0;i<lvl;i++)stars+='★';
+    starsEl.textContent=stars;
+  }
 }
 
 function handlePlayerInput(){
@@ -1531,6 +1563,7 @@ function gameLoop(ts){
     ctx.translate((Math.random()-0.5)*screenShake*2,(Math.random()-0.5)*screenShake*2);
   }
   draw();
+  animateScoreGain(); // 得分放大动画
   ctx.restore();
   if(flashTimer>0){
     ctx.save();
