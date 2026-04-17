@@ -135,16 +135,65 @@ function playTone(freq,type,dur,vol=0.15){
     o.start();o.stop(audioCtx.currentTime+dur);
   }catch(e){}
 }
-function playShoot(big=false){playTone(big?300:500,'square',0.1,0.12);}
-function playExplode(big=false){playTone(big?80:120,'sawtooth',big?0.5:0.3,0.2);}
-function playPowerup(){playTone(800,'sine',0.1);setTimeout(()=>playTone(1000,'sine',0.1),80);setTimeout(()=>playTone(1200,'sine',0.15),160);}
-function playHit(){playTone(200,'square',0.15,0.2);}
+function playShoot(big=false){
+  const freq=big?(280+Math.random()*40):(480+Math.random()*60);
+  playTone(freq,'square',0.08,0.1);
+  if(big)playTone(freq*0.5,'square',0.1,0.05);
+}
+function playExplode(big=false){
+  const baseFreq=big?60:100;
+  playTone(baseFreq,'sawtooth',big?0.4:0.25,big?0.25:0.15);
+  playTone(baseFreq*1.5,'square',big?0.3:0.2,big?0.15:0.1);
+  playTone(baseFreq*0.5,'sawtooth',big?0.5:0.3,big?0.1:0.08);
+}
+function playPowerup(){
+  playTone(600,'sine',0.08,0.12);
+  setTimeout(()=>playTone(800,'sine',0.08,0.12),60);
+  setTimeout(()=>playTone(1000,'sine',0.08,0.12),120);
+  setTimeout(()=>playTone(1400,'sine',0.15,0.15),180);
+}
+function playHit(){playTone(200+Math.random()*50,'square',0.12,0.18);}
 function playStart(){[400,500,600,800].forEach((f,i)=>setTimeout(()=>playTone(f,'square',0.15),i*100));}
-function playDie(){playTone(400,'sawtooth',0.1);setTimeout(()=>playTone(300,'sawtooth',0.1),100);setTimeout(()=>playTone(200,'sawtooth',0.2),200);}
-function playShield(){playTone(600,'sine',0.3);}
-function playLevelUp(){[500,600,700,800,900,1000].forEach((f,i)=>setTimeout(()=>playTone(f,'square',0.1),i*60));}
-function playWin(){[600,800,1000,1200].forEach((f,i)=>setTimeout(()=>playTone(f,'square',0.15),i*120));}
-function playSplash(){playTone(150,'sine',0.1,0.1);}
+function playDie(){
+  playTone(400,'sawtooth',0.1,0.15);
+  setTimeout(()=>playTone(300,'sawtooth',0.1,0.12),100);
+  setTimeout(()=>playTone(180,'sawtooth',0.25,0.1),200);
+}
+function playShield(){playTone(500,'sine',0.15);setTimeout(()=>playTone(700,'sine',0.2),80);}
+function playLevelUp(){
+  [500,600,700,800,900,1000,1200].forEach((f,i)=>setTimeout(()=>playTone(f,'square',0.08),i*50));
+}
+function playWin(){[500,600,800,1000,1200].forEach((f,i)=>setTimeout(()=>playTone(f,'square',0.12),i*100));}
+function playSplash(){playTone(120+Math.random()*40,'sine',0.12,0.08);}
+
+// 背景音乐系统
+let bgMusicPlaying=false;
+let bgMusicIntervalId=null;
+const bgMusicNotes=[262,294,330,349,392,440,494,523,494,440,392,349,330,294];
+let bgMusicIndex=0;
+
+function startBgMusic(){
+  if(bgMusicPlaying||muted)return;
+  bgMusicPlaying=true;
+  bgMusicIndex=0;
+  const playNote=()=>{
+    if(!bgMusicPlaying||muted){stopBgMusic();return;}
+    const note=bgMusicNotes[bgMusicIndex%bgMusicNotes.length];
+    playTone(note,'square',0.15,0.04);
+    bgMusicIndex++;
+  };
+  playNote();
+  bgMusicIntervalId=setInterval(playNote,200);
+}
+function stopBgMusic(){
+  bgMusicPlaying=false;
+  if(bgMusicIntervalId){clearInterval(bgMusicIntervalId);bgMusicIntervalId=null;}
+}
+function playWaveFanfare(){
+  const fanfare=[400,500,600,800,1000];
+  fanfare.forEach((f,i)=>setTimeout(()=>playTone(f,'square',0.12,0.1),i*80));
+  setTimeout(()=>playTone(1200,'square',0.25,0.12),400);
+}
 
 function spawnMuzzleFlash(x,y,dir){
   // 枪口火焰粒子 - orange/yellow flash
@@ -1272,6 +1321,7 @@ function startGame(twoPlayer=false){
   gameState='playing';
   document.getElementById('msg').style.display='none';
   playStart();
+  startBgMusic();
 }
 
 function nextWave(){
@@ -1310,9 +1360,11 @@ function nextWave(){
   updateTankLevel();
   showLevelUp(player?player.level:1);
   playWin();
+  playWaveFanfare();
 }
 
 function gameOver(win=false){
+  stopBgMusic();
   gameState=win?'victory':'gameover';
   if(score>hiScore)hiScore=score;
   const msg=document.getElementById('msg');
@@ -1672,12 +1724,14 @@ document.addEventListener('keydown',e=>{
       }
     }else if(gameState==='playing'){
       gameState='paused';
+      stopBgMusic();
       const msg=document.getElementById('msg');
       msg.innerHTML=`<h1 style="font-size:28px">暂停</h1><h2>PAUSED</h2><p class="blink">[ PRESS ENTER 继续 ]</p>`;
       msg.style.display='block';
     }else if(gameState==='paused'){
       gameState='playing';
       document.getElementById('msg').style.display='none';
+      startBgMusic();
     }
   }
   if(e.code==='KeyM'){
