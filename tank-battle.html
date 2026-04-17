@@ -113,6 +113,11 @@ let restartPromptTimer=0;
 // Bullet trail pool
 const bulletTrailPool=[];
 const MAX_BULLET_TRAILS=100;
+// 对象池 - 性能优化
+const MAX_BULLETS=100;
+const MAX_PARTICLES=200;
+const bulletPool=[];
+const particlePool=[];
 
 const C={
   brick:'#b87333',brickDark:'#8b4513',brickLight:'#cd853f',
@@ -1555,14 +1560,16 @@ function draw(){
   ctx.fillRect(0,0,GW,H);
   drawMap();
   drawRipples();
-  powerups.forEach(p=>p.draw());
-  explosions.forEach(e=>e.draw());
-  tankDebris.forEach(d=>d.draw());
-  particles.forEach(p=>p.draw());
-  enemies.forEach(e=>e.draw());
+  // 可见性检查 - 只绘制屏幕内的对象
+  const margin=TS*2;
+  powerups.forEach(p=>{if(p.x>-margin&&p.x<GW+margin)p.draw();});
+  explosions.forEach(e=>{if(e.x>-margin&&e.x<GW+margin)e.draw();});
+  tankDebris.forEach(d=>{if(d.x>-margin&&d.x<GW+margin)d.draw();});
+  particles.forEach(p=>{if(p.x>-margin&&p.x<GW+margin&&p.y>-margin&&p.y<H+margin)p.draw();});
+  enemies.forEach(e=>{if(e.x>-margin&&e.x<GW+margin)e.draw();});
   if(player&&player.alive)player.draw();
   if(player2&&player2.alive)player2.draw();
-  bullets.forEach(b=>b.draw());
+  bullets.forEach(b=>{if(b.x>-margin&&b.x<GW+margin&&b.y>-margin&&b.y<H+margin)b.draw();});
 }
 
 function update(){
