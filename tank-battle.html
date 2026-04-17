@@ -114,7 +114,7 @@ mm.width=80;mm.height=60;
 
 // Game state
 let gameState='start',score=0,hiScore=0,lives=3,wave=1,enemiesLeft=0,totalEnemies=0,spawnQueue=[];
-let player,player2,enemies=[],bullets=[],explosions=[],powerups=[],particles=[],tankDebris=[];
+let player,player2,enemies=[],bullets=[],explosions=[],powerups=[],particles=[],tankDebris=[],damageNumbers=[];
 let bricks=[],steels=[],waters=[],forests=[],base;
 let keys={},muted=localStorage.getItem('tankMuted')==='true';
 let lastShot=0,lastShotCd=350;
@@ -798,6 +798,40 @@ class Particle{
     ctx.fillStyle=this.col;
     const s=Math.floor(this.size*(this.life/this.maxLife)+1);
     ctx.fillRect(Math.floor(this.x),Math.floor(this.y),s,s);
+    ctx.restore();
+  }
+}
+
+// Floating damage number class
+class DamageNumber{
+  constructor(x,y,damage,isCombo=false){
+    this.x=x;this.y=y;this.damage=damage;this.isCombo=isCombo;
+    this.vy=-2;
+    this.life=40;
+    this.maxLife=40;
+    this.alive=true;
+    this.scale=isCombo?1.5:1;
+  }
+  update(){
+    this.y+=this.vy;
+    this.vy+=0.05;
+    this.life--;
+    if(this.life<=0)this.alive=false;
+  }
+  draw(){
+    const alpha=Math.min(1,this.life/20);
+    ctx.save();
+    ctx.globalAlpha=alpha;
+    ctx.font=`bold ${Math.floor(14*this.scale)}px Courier New`;
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    const color=this.isCombo?'#ff0':'#fff';
+    ctx.fillStyle='#000';
+    ctx.fillText(this.damage,this.x+1,this.y+1);
+    ctx.fillStyle=color;
+    ctx.shadowColor=color;
+    ctx.shadowBlur=8;
+    ctx.fillText(this.damage,this.x,this.y);
     ctx.restore();
   }
 }
@@ -1712,6 +1746,7 @@ function draw(){
   if(player&&player.alive)player.draw();
   if(player2&&player2.alive)player2.draw();
   bullets.forEach(b=>{if(b.x>-margin&&b.x<GW+margin&&b.y>-margin&&b.y<H+margin)b.draw();});
+  damageNumbers.forEach(d=>d.draw());
 
   // Wave transition countdown display
   if(waveTransitionTimer>0){
@@ -1887,7 +1922,10 @@ function update(){
           if(comboCount>=10)comboMultiplier=3;
           else if(comboCount>=5)comboMultiplier=2;
           else if(comboCount>=3)comboMultiplier=1.5;
-          score+=100*(e.type+1)*comboMultiplier;
+          const damage=Math.floor(100*(e.type+1)*comboMultiplier);
+          score+=damage;
+          // 伤害数字飘字
+          damageNumbers.push(new DamageNumber(e.cx,e.cy-10,damage,comboCount>=3));
           playExplode();
           createExplosion(e.cx,e.cy,true); // 大爆炸
           hitStopTimer=3; // 0.05秒hit-stop
@@ -1977,6 +2015,8 @@ function update(){
   tankDebris=tankDebris.filter(d=>d.alive);
   particles.forEach(p=>p.update());
   particles=particles.filter(p=>p.alive);
+  damageNumbers.forEach(d=>d.update());
+  damageNumbers=damageNumbers.filter(d=>d.alive);
 }
 
 /* =============================================================
