@@ -1596,9 +1596,16 @@ function drawMinimap(){
     }
   }
   if(base&&base.alive){
-    mmCtx.fillStyle='#00f'; // 蓝色基地标记
+    mmCtx.fillStyle='#00f';
     mmCtx.fillRect(base.x/GW*80,base.y/(H-HUD_H)*60,5,5);
   }
+  // Draw bullets on minimap as yellow dots
+  bullets.forEach(b=>{
+    if(b.alive){
+      mmCtx.fillStyle=b.big?'#f80':'#ff0';
+      mmCtx.fillRect(b.x/GW*80,b.y/(H-HUD_H)*60,2,2);
+    }
+  });
   enemies.forEach(e=>e.drawMinimap());
   if(player&&player.alive)player.drawMinimap();
   if(player2&&player2.alive)player2.drawMinimap();
