@@ -179,6 +179,10 @@ function unlockNextLevel(){
 // Wave transition
 let waveTransitionTimer=0;
 let waveTransitionCountdown=0;
+let wavePerformanceScore=0; // Score earned this wave
+let waveDeaths=0; // Player deaths this wave
+let difficultyLevel=0; // 0=easy,1=normal,2=hard,3=extreme
+let difficultyModifier=1.0; // Applied to enemy stats
 
 // Bullet prediction
 let spaceHeld=false;
@@ -1314,11 +1318,14 @@ function spawnEnemy(){
   const sx=possibleSpawns[Math.floor(Math.random()*possibleSpawns.length)]*TS;
   const enemy=new Tank(sx,-TS,2,false);
   enemy.type=type;
-  let baseSpeed=Math.min(speeds[type],3.0);
+  let baseSpeed=Math.min(speeds[type]*difficultyModifier,3.5);
   // Rage mode: 50% speed boost
   if(waveRageMode)baseSpeed*=1.5;
   enemy.speed=baseSpeed;
   enemy.maxSpeed=baseSpeed;
+  // Difficulty affects enemy HP
+  enemy.hp=Math.floor((2-enemy.type)*difficultyModifier);
+  enemy.maxHp=enemy.hp;
   enemy.tankColor=colors[type];
   enemy.aiDir=2;
   enemies.push(enemy);
@@ -1608,7 +1615,9 @@ function useGrenade(){
       tankDebris.push(new TankDebris(e.x+TS/2,e.y+TS/2,e.dir,e.tankColor));
       e.alive=false;
       createExplosion(e.cx,e.cy,true);
-      score+=100*(e.type+1)*comboMultiplier;
+      const damage=100*(e.type+1)*comboMultiplier;
+      score+=damage;
+      wavePerformanceScore+=damage;
       killCount++;
       enemiesLeft=Math.max(0,enemiesLeft-1);
     }
@@ -1848,6 +1857,24 @@ function nextWave(){
   waveRageMode=false;
   spawnTimer=0;
   flashTimer=30;
+
+  // Dynamic difficulty: adjust based on wave performance
+  // Calculate wave performance: kills per second + accuracy bonus - death penalty
+  const waveDuration=(waveTimeLimit-waveTimeRemaining)/60;
+  const killsPerSecond=wavePerformanceScore>0?(wavePerformanceScore/waveDuration):0;
+  const accuracy=shotsFired>0?(shotsHit/shotsFired):0;
+  const performanceRating=killsPerSecond*0.6+accuracy*40-waveDeaths*0.5;
+
+  if(performanceRating<2)difficultyLevel=Math.max(0,difficultyLevel-1);
+  else if(performanceRating>5)difficultyLevel=Math.min(3,difficultyLevel+1);
+
+  // Difficulty modifier affects enemy HP, speed, damage
+  difficultyModifier=1.0+difficultyLevel*0.15;
+
+  // Reset wave tracking
+  wavePerformanceScore=0;
+  waveDeaths=0;
+
   updateHUD();
   updateTankLevel();
   showLevelUp(player?player.level:1);
@@ -2153,30 +2180,36 @@ function update(){
         if(e.alive&&checkTankHit(b,e)){
           b.alive=false;
           shotsHit++;
-          killCount++;
           // Enemy aggro: remember who hit this enemy
           e.aggroTarget=b.isPlayer?'player1':'player2';
           e.aggroTime=300;
-          // 坦克裂解动画
-          tankDebris.push(new TankDebris(e.x+TS/2,e.y+TS/2,e.dir,e.tankColor));
-          e.alive=false;
-          // 连击系统
-          comboCount++;
-          comboTimer=180;
-          if(comboCount>=10)comboMultiplier=3;
-          else if(comboCount>=5)comboMultiplier=2;
-          else if(comboCount>=3)comboMultiplier=1.5;
-          const damage=Math.floor(100*(e.type+1)*comboMultiplier);
-          score+=damage;
-          // 伤害数字飘字
-          damageNumbers.push(new DamageNumber(e.cx,e.cy-10,damage,comboCount>=3));
-          playExplode();
-          createExplosion(e.cx,e.cy,true); // 大爆炸
-          hitStopTimer=3; // 0.05秒hit-stop
-          killFlashTimer=15; // 击杀边缘闪光
-          spawnPowerup(e.x,e.y);
-          enemiesLeft=Math.max(0,enemiesLeft-1);
-          updateHUD();
+          // HP-based damage
+          const bulletDamage=1;
+          e.hp=(e.hp||1)-bulletDamage;
+          if(e.hp<=0){
+            e.alive=false;
+            killCount++;
+            // 坦克裂解动画
+            tankDebris.push(new TankDebris(e.x+TS/2,e.y+TS/2,e.dir,e.tankColor));
+            // 连击系统
+            comboCount++;
+            comboTimer=180;
+            if(comboCount>=10)comboMultiplier=3;
+            else if(comboCount>=5)comboMultiplier=2;
+            else if(comboCount>=3)comboMultiplier=1.5;
+            const damage=Math.floor(100*(e.type+1)*comboMultiplier);
+            score+=damage;
+            wavePerformanceScore+=damage;
+            // 伤害数字飘字
+            damageNumbers.push(new DamageNumber(e.cx,e.cy-10,damage,comboCount>=3));
+            playExplode();
+            createExplosion(e.cx,e.cy,true); // 大爆炸
+            hitStopTimer=3; // 0.05秒hit-stop
+            killFlashTimer=15; // 击杀边缘闪光
+            spawnPowerup(e.x,e.y);
+            enemiesLeft=Math.max(0,enemiesLeft-1);
+            updateHUD();
+          }
           break;
         }
       }
@@ -2193,7 +2226,7 @@ function update(){
         return false;
       };
       if(checkHit(player)) {
-        lives--;
+        lives--;waveDeaths++;
         updateLivesDisplay();
         if(lives<=0){
           gameOver(false);
@@ -2201,7 +2234,7 @@ function update(){
         }
         setTimeout(respawnPlayer,1500);
       } else if(isTwoPlayer&&checkHit(player2)){
-        lives--;
+        lives--;waveDeaths++;
         updateLivesDisplay();
         if(lives<=0){
           gameOver(false);
@@ -2332,13 +2365,18 @@ function update(){
         createExplosion(m.x+TS/2,m.y+TS/2,true);
         playExplode(true);
         screenShake=15;
-        e.alive=false;
-        tankDebris.push(new TankDebris(e.x+TS/2,e.y+TS/2,e.dir,e.tankColor));
-        score+=100*(e.type+1)*comboMultiplier;
-        damageNumbers.push(new DamageNumber(e.cx,e.cy-10,Math.floor(100*(e.type+1)*comboMultiplier),false));
-        killCount++;
-        enemiesLeft=Math.max(0,enemiesLeft-1);
-        spawnPowerup(e.x,e.y);
+        e.hp=(e.hp||1)-3;
+        if(e.hp<=0){
+          e.alive=false;
+          tankDebris.push(new TankDebris(e.x+TS/2,e.y+TS/2,e.dir,e.tankColor));
+          const damage=Math.floor(100*(e.type+1)*comboMultiplier);
+          score+=damage;
+          wavePerformanceScore+=damage;
+          damageNumbers.push(new DamageNumber(e.cx,e.cy-10,damage,false));
+          killCount++;
+          enemiesLeft=Math.max(0,enemiesLeft-1);
+          spawnPowerup(e.x,e.y);
+        }
         break;
       }
     }
