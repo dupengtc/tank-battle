@@ -128,6 +128,7 @@ let audioCtx=null;
 let isTwoPlayer=false;
 let killCount=0,shotsFired=0,shotsHit=0,survivalTime=0;
 let restartPromptTimer=0;
+let killFlashTimer=0;
 
 // Save system
 let unlockedLevels=parseInt(localStorage.getItem('tankUnlockedLevels'))||1;
@@ -1929,6 +1930,7 @@ function update(){
           playExplode();
           createExplosion(e.cx,e.cy,true); // 大爆炸
           hitStopTimer=3; // 0.05秒hit-stop
+          killFlashTimer=15; // 击杀边缘闪光
           spawnPowerup(e.x,e.y);
           enemiesLeft=Math.max(0,enemiesLeft-1);
           updateHUD();
@@ -2070,6 +2072,20 @@ function gameLoop(ts){
     ctx.save();
     ctx.fillStyle=flashColor;
     ctx.globalAlpha=flashTimer/30;
+    ctx.fillRect(0,0,GW,H);
+    ctx.restore();
+  }
+  // Kill edge flash
+  if(killFlashTimer>0){
+    killFlashTimer--;
+    const alpha=killFlashTimer/15*0.6;
+    ctx.save();
+    ctx.globalAlpha=alpha;
+    const grad=ctx.createRadialGradient(GW/2,H/2,0,GW/2,H/2,GW*0.7);
+    grad.addColorStop(0,'transparent');
+    grad.addColorStop(0.7,'transparent');
+    grad.addColorStop(1,'rgba(255,100,50,0.8)');
+    ctx.fillStyle=grad;
     ctx.fillRect(0,0,GW,H);
     ctx.restore();
   }
