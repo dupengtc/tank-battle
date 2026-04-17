@@ -61,6 +61,10 @@
       <span class="hud-label">ENEMIES</span>
       <span class="hud-val red" id="enemies">0</span>
     </div>
+    <div class="hud-item" id="enemy-preview">
+      <span class="hud-label">NEXT</span>
+      <span id="enemy-types"></span>
+    </div>
     <div class="hud-item">
       <span class="hud-label">LEVEL</span>
       <span class="hud-val" id="tank-level">1</span>
@@ -1289,6 +1293,26 @@ function updateHUD(){
       comboEl.style.display='none';
     }
   }
+  updateEnemyPreview();
+}
+
+// Enemy type preview for next wave
+const enemyTypeNames={0:'速',1:'中',2:'重',3:'标'};
+const enemyTypeColors={0:'#c00',1:'#c60',2:'#c30',3:'#933'};
+function updateEnemyPreview(){
+  const container=document.getElementById('enemy-types');
+  if(!container)return;
+  const previewCount=Math.min(totalEnemies,8);
+  let html='';
+  const types=[0,1,2,3];
+  for(let i=0;i<previewCount;i++){
+    const type=types[Math.floor(Math.random()*types.length)];
+    html+=`<span style="color:${enemyTypeColors[type]};text-shadow:0 0 4px ${enemyTypeColors[type]};margin:0 1px;font-size:11px">${enemyTypeNames[type]}</span>`;
+  }
+  if(totalEnemies>8){
+    html+=`<span style="color:#888;font-size:10px">+${totalEnemies-8}</span>`;
+  }
+  container.innerHTML=html;
 }
 
 // 道具状态显示
