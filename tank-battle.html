@@ -135,6 +135,11 @@ let killCount=0,shotsFired=0,shotsHit=0,survivalTime=0;
 let restartPromptTimer=0;
 let killFlashTimer=0;
 
+// Co-op revival
+let playerDead=false; // Player 1 dead and waiting for revival
+let player2Dead=false; // Player 2 dead and waiting for revival
+let revivalTimer=0; // Timer for auto-revival countdown
+
 // Weather system
 let weatherType=0; // 0=none, 1=rain, 2=snow
 let weatherParticles=[];
@@ -2204,15 +2209,27 @@ function update(){
       return false;
     };
     if(checkCollision(player)){
-      lives--;
-      updateLivesDisplay();
-      if(lives<=0){gameOver(false);return;}
-      setTimeout(respawnPlayer,1500);
+      if(isTwoPlayer&&player2&&player2.alive&&!playerDead){
+        // Co-op revival: player 1 downed instead of losing life
+        playerDead=true;
+        revivalTimer=600; // 10 seconds to revive
+      }else{
+        lives--;
+        updateLivesDisplay();
+        if(lives<=0){gameOver(false);return;}
+        setTimeout(respawnPlayer,1500);
+      }
     }else if(isTwoPlayer&&checkCollision(player2)){
-      lives--;
-      updateLivesDisplay();
-      if(lives<=0){gameOver(false);return;}
-      setTimeout(respawnPlayer2,1500);
+      if(isTwoPlayer&&player&&player.alive&&!player2Dead){
+        // Co-op revival: player 2 downed instead of losing life
+        player2Dead=true;
+        revivalTimer=600;
+      }else{
+        lives--;
+        updateLivesDisplay();
+        if(lives<=0){gameOver(false);return;}
+        setTimeout(respawnPlayer2,1500);
+      }
     }
   }
 
@@ -2231,6 +2248,61 @@ function update(){
 
   if(player)powerups.forEach(p=>collectPowerup(p,player));
   if(player2)powerups.forEach(p=>collectPowerup(p,player2));
+
+  // Co-op revival system
+  if(isTwoPlayer&&(playerDead||player2Dead)){
+    revivalTimer--;
+    if(revivalTimer<=0){
+      // Auto-revive after timeout
+      if(playerDead){
+        playerDead=false;
+        lives--;
+        updateLivesDisplay();
+        if(lives<=0){gameOver(false);return;}
+        setTimeout(respawnPlayer,1500);
+      }
+      if(player2Dead){
+        player2Dead=false;
+        lives--;
+        updateLivesDisplay();
+        if(lives<=0){gameOver(false);return;}
+        setTimeout(respawnPlayer2,1500);
+      }
+    }
+    // Check for manual revival with R key
+    if(keys['KeyR']){
+      if(playerDead&&player2&&player2.alive){
+        // Player 2 revives Player 1
+        const dx=Math.abs(player2.cx-player.cx);
+        const dy=Math.abs(player2.cy-player.cy);
+        if(dx<TS*2&&dy<TS*2){
+          playerDead=false;
+          player.alive=true;
+          player.x=player2.x;
+          player.y=player2.y-TS*2;
+          player.invincible=120;
+          player.shieldTimer=120;
+          revivalTimer=0;
+          playShield();
+        }
+      }
+      if(player2Dead&&player&&player.alive){
+        // Player 1 revives Player 2
+        const dx=Math.abs(player.cx-player2.cx);
+        const dy=Math.abs(player.cy-player2.cy);
+        if(dx<TS*2&&dy<TS*2){
+          player2Dead=false;
+          player2.alive=true;
+          player2.x=player.x;
+          player2.y=player.y-TS*2;
+          player2.invincible=120;
+          player2.shieldTimer=120;
+          revivalTimer=0;
+          playShield();
+        }
+      }
+    }
+  }
 
   // Mine collision with enemies
   for(let i=mines.length-1;i>=0;i--){
