@@ -1735,10 +1735,20 @@ function update(){
 }
 
 let lastTime=0;
+let fps=0,fpsFrames=0,fpsTimer=0,showFps=false;
 function gameLoop(ts){
   requestAnimationFrame(gameLoop);
   const dt=ts-lastTime;
-  if(dt<16)return;
+  // FPS计算
+  fpsFrames++;
+  fpsTimer+=dt;
+  if(fpsTimer>=1000){
+    fps=fpsFrames;
+    fpsFrames=0;
+    fpsTimer=0;
+  }
+  // 超过60FPS时跳帧
+  if(dt<16.67)return;
   lastTime=ts;
   if(gameState==='playing'){
     update();
@@ -1750,6 +1760,11 @@ function gameLoop(ts){
     ctx.translate((Math.random()-0.5)*screenShake*2,(Math.random()-0.5)*screenShake*2);
   }
   draw();
+  if(showFps){
+    ctx.fillStyle='#0f0';
+    ctx.font='12px Courier New';
+    ctx.fillText(`FPS:${fps}`,5,20);
+  }
   if(gameState==='start'||gameState==='gameover'){
     drawBgParticles();
   }
@@ -1851,6 +1866,9 @@ document.addEventListener('keydown',e=>{
   }
   if(e.code==='KeyG'){
     useGrenade();
+  }
+  if(e.code==='KeyF'){
+    showFps=!showFps;
   }
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)){
     e.preventDefault();
