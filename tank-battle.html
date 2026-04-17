@@ -872,6 +872,9 @@ class Tank{
     if(this.isPlayer||this.isPlayer2){
       ctx.shadowColor=this.isPlayer?'#4a4':'#44d';
       ctx.shadowBlur=8;
+    }else if(this.isBoss){
+      ctx.shadowColor='#f0f';
+      ctx.shadowBlur=20;
     }else{
       ctx.shadowColor=this.tankColor;
       ctx.shadowBlur=4;
@@ -1607,6 +1610,28 @@ function drawMap(){
    MODULE: Game Logic (Spawn, Wave, Collision)
    ============================================================= */
 function spawnEnemy(){
+  // Boss wave every 5 waves
+  const isBossWave=wave%5===0&&enemiesLeft===totalEnemies;
+  if(isBossWave){
+    // Spawn boss in center
+    const boss=new Tank(GW/2-TS,-TS,2,false);
+    boss.type=4; // Boss type
+    boss.isBoss=true;
+    boss.speed=1.0+wave*0.05;
+    boss.maxSpeed=boss.speed;
+    boss.hp=10+wave*2;
+    boss.maxHp=boss.hp;
+    boss.tankColor='#f0f'; // Purple boss
+    boss.w=TS*1.5; // Larger size
+    boss.h=TS*1.5;
+    boss.aiDir=2;
+    enemies.push(boss);
+    screenShake=15;
+    flashTimer=15;
+    flashColor='rgba(255,0,255,0.4)';
+    return;
+  }
+
   const types=[0,1,2,3];
   const type=types[Math.floor(Math.random()*types.length)];
   const speeds=[1.0+wave*0.1,1.6+wave*0.08,0.8+wave*0.05,1.2+wave*0.1];
