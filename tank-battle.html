@@ -2582,6 +2582,23 @@ function update(){
             const damage=Math.floor(100*(e.type+1)*comboMultiplier);
             score+=damage;
             wavePerformanceScore+=damage;
+            // Player XP and leveling (beyond star powerups)
+            if(b.isPlayer&&player){
+              player.xp=(player.xp||0)+20*(e.type+1);
+              if(player.xp>=100&&player.level<4){
+                player.level=Math.min(4,player.level+1);
+                player.xp=0;
+                showLevelUp(player.level);
+                updateTankLevel();
+              }
+            }
+            if(b.isPlayer2&&player2){
+              player2.xp=(player2.xp||0)+20*(e.type+1);
+              if(player2.xp>=100&&player2.level<4){
+                player2.level=Math.min(4,player2.level+1);
+                player2.xp=0;
+              }
+            }
             // 伤害数字飘字
             damageNumbers.push(new DamageNumber(e.cx,e.cy-10,damage,comboCount>=3));
             playExplode();
