@@ -1357,23 +1357,30 @@ function generateMap(wv){
 
   // Predefined patterns based on wave
   const patterns=[
-    [[2,4],[2,5],[2,6],[3,4],[3,6],[4,4],[4,5],[4,6]],
-    [[10,4],[10,5],[10,6],[11,4],[11,6],[12,4],[12,5],[12,6]],
-    [[6,10],[6,11],[7,10],[8,10]],
-    [[15,10],[15,11],[16,10],[17,10]],
-    [[2,16],[2,17],[3,16],[3,17],[2,18],[3,18]],
-    [[16,16],[16,17],[17,16],[17,17],[16,18],[17,18]],
-    [[5,6],[5,7],[6,6],[7,6]],
-    [[14,14],[14,15],[15,14],[16,14]],
+    [[2,4],[2,5],[2,6],[3,4],[3,6],[4,4],[4,5],[4,6]], // Left fort
+    [[10,4],[10,5],[10,6],[11,4],[11,6],[12,4],[12,5],[12,6]], // Right fort
+    [[6,10],[6,11],[7,10],[8,10]], // Center top
+    [[15,10],[15,11],[16,10],[17,10]], // Far right
+    [[2,16],[2,17],[3,16],[3,17],[2,18],[3,18]], // Left bottom fort
+    [[16,16],[16,17],[17,16],[17,17],[16,18],[17,18]], // Right bottom fort
+    [[5,6],[5,7],[6,6],[7,6]], // Small left
+    [[14,14],[14,15],[15,14],[16,14]], // Small right
+    // Wave-specific unique layouts
+    [[5,8],[5,9],[6,8],[7,8],[8,8]], // Horizontal corridor
+    [[12,8],[12,9],[13,8],[14,8],[15,8]], // Mirror corridor
+    [[8,12],[9,12],[10,12],[11,12]], // Cross path
+    [[6,5],[6,6],[7,5],[8,5],[8,6]], // L-shape
   ];
 
+  // Wave determines which pattern set to use
+  const wavePatternSet=(wv%5);
   const patternIdx=Math.floor(Math.random()*patterns.length);
-  const patternsToUse=1+wv%3;
-  for(let pi=0;pi<patternsToUse;pi++){
-    const pat=patterns[(patternIdx+pi)%patterns.length];
+  const patternsToUse=2+Math.floor(wv/5);
+  for(let pi=0;pi<patternsToUse&&pi<patterns.length;pi++){
+    const pat=patterns[(patternIdx+pi+wavePatternSet)%patterns.length];
     for(const[px,py]of pat){
       if(py<bH&&px<bG){
-        if(Math.random()<0.35){
+        if(Math.random()<0.35+Math.min(wv*0.02,0.3)){
           steels[py][px]=1;
         }else{
           bricks[py][px]=1;
