@@ -100,6 +100,10 @@ let screenShake=0,flashTimer=0;
 let audioCtx=null;
 let isTwoPlayer=false;
 
+// Game stats
+let killCount=0,shotsFired=0,shotsHit=0,survivalTime=0;
+let restartPromptTimer=0;
+
 // Bullet trail pool
 const bulletTrailPool=[];
 const MAX_BULLET_TRAILS=100;
@@ -1153,7 +1157,7 @@ function handlePlayerInput(){
 
   if(keys['Space']||keys['KeyX']){
     const b=player.shoot();
-    if(b)bullets.push(b);
+    if(b){bullets.push(b);shotsFired++;}
   }
 }
 
@@ -1168,7 +1172,7 @@ function handlePlayer2Input(){
 
   if(keys['KeyE']||keys['Numpad0']){
     const b=player2.shoot();
-    if(b)bullets.push(b);
+    if(b){bullets.push(b);shotsFired++;}
   }
 }
 
@@ -1238,6 +1242,7 @@ function startGame(twoPlayer=false){
   spawnQueue=[];
   shieldTimer=0;rapidTimer=0;bigBulletTimer=0;
   isTwoPlayer=twoPlayer;
+  killCount=0;shotsFired=0;shotsHit=0;survivalTime=0;restartPromptTimer=0;
 
   generateMap(wave);
   const baseTX=Math.floor(G/2)-1;
@@ -1311,10 +1316,24 @@ function gameOver(win=false){
   gameState=win?'victory':'gameover';
   if(score>hiScore)hiScore=score;
   const msg=document.getElementById('msg');
+  const survivalSec=Math.floor(gameTime/60);
+  const accuracy=shotsFired>0?Math.round(shotsHit/shotsFired*100):0;
   if(win){
-    msg.innerHTML=`<h1>恭喜过关!</h1><h2>WAVE ${wave} CLEAR!</h2><p>得分: ${score}</p><p class="blink" style="margin-top:16px">[ PRESS ENTER 继续 ]</p>`;
+    msg.innerHTML=`<h1>恭喜过关!</h1><h2>WAVE ${wave} CLEAR!</h2>
+      <p>得分: ${formatScore(score)}</p>
+      <p>击杀: ${killCount} | 命中率: ${accuracy}% | 存活: ${survivalSec}秒</p>
+      <p class="blink" style="margin-top:16px">[ PRESS ENTER 继续 ]</p>`;
   }else{
-    msg.innerHTML=`<h1 style="color:#f44">游戏结束</h1><h2>GAME OVER</h2><p>最终得分: ${score}</p><p>波次: 第 ${wave} 波</p><p class="blink" style="margin-top:16px">[ PRESS ENTER 重新开始 ]</p>`;
+    msg.innerHTML=`<h1 style="color:#f44">游戏结束</h1><h2>GAME OVER</h2>
+      <p>最终得分: ${formatScore(score)}</p>
+      <p>波次: 第 ${wave} 波</p>
+      <p>击杀: ${killCount} | 命中率: ${accuracy}% | 存活: ${survivalSec}秒</p>
+      <p id="restart-prompt" class="blink" style="margin-top:16px;opacity:0">[ PRESS ENTER 重新开始 ]</p>`;
+    // 2秒后显示重新开始提示
+    setTimeout(()=>{
+      const rp=document.getElementById('restart-prompt');
+      if(rp)rp.style.opacity='1';
+    },2000);
   }
   msg.style.display='block';
   updateHUD();
@@ -1460,6 +1479,8 @@ function update(){
       for(const e of enemies){
         if(e.alive&&checkTankHit(b,e)){
           b.alive=false;
+          shotsHit++;
+          killCount++;
           // 坦克裂解动画
           tankDebris.push(new TankDebris(e.x+TS/2,e.y+TS/2,e.dir,e.tankColor));
           e.alive=false;
