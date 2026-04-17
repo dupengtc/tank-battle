@@ -57,6 +57,10 @@
       <span class="hud-label">WAVE</span>
       <span class="hud-val gold" id="wave">1</span>
     </div>
+    <div class="hud-item" id="time-display">
+      <span class="hud-label">TIME</span>
+      <span class="hud-val" id="wave-time">30</span>
+    </div>
     <div class="hud-item">
       <span class="hud-label">ENEMIES</span>
       <span class="hud-val red" id="enemies">0</span>
@@ -136,6 +140,12 @@ let weatherType=0; // 0=none, 1=rain, 2=snow
 let weatherParticles=[];
 let weatherTimer=0;
 const MAX_WEATHER=80;
+
+// Time challenge
+let waveTimeLimit=0; // Time limit for current wave (in frames)
+let waveTimeRemaining=0;
+let waveRageMode=false; // Enemies enraged when time runs out
+let rageFlashTimer=0;
 
 // Save system
 let unlockedLevels=parseInt(localStorage.getItem('tankUnlockedLevels'))||1;
@@ -584,7 +594,9 @@ class Tank{
       }
     }
     // Shoot when has line of sight - type 2 (heavy) shoots more frequently
-    const shootInterval=this.type===2?12:20;
+    // Rage mode: shoot 30% faster
+    let shootInterval=this.type===2?12:20;
+    if(waveRageMode)shootInterval=Math.floor(shootInterval*0.7);
     if(this.aiTimer%shootInterval===0&&this.canShoot()&&this.hasLineOfSight(px,py)){
       const b=this.shoot();
       if(b)bullets.push(b);
@@ -1284,7 +1296,11 @@ function spawnEnemy(){
   const sx=possibleSpawns[Math.floor(Math.random()*possibleSpawns.length)]*TS;
   const enemy=new Tank(sx,-TS,2,false);
   enemy.type=type;
-  enemy.speed=Math.min(speeds[type],3.0);
+  let baseSpeed=Math.min(speeds[type],3.0);
+  // Rage mode: 50% speed boost
+  if(waveRageMode)baseSpeed*=1.5;
+  enemy.speed=baseSpeed;
+  enemy.maxSpeed=baseSpeed;
   enemy.tankColor=colors[type];
   enemy.aiDir=2;
   enemies.push(enemy);
@@ -1469,6 +1485,22 @@ function updateHUD(){
   document.getElementById('wave').textContent=wave;
   document.getElementById('enemies').textContent=enemiesLeft;
   document.getElementById('hiscore').textContent=formatScore(hiScore);
+  // Time display
+  const timeEl=document.getElementById('wave-time');
+  if(timeEl){
+    const secs=Math.ceil(waveTimeRemaining/60);
+    timeEl.textContent=secs;
+    if(waveRageMode){
+      timeEl.style.color='#f00';
+      timeEl.style.textShadow='0 0 8px #f00';
+    }else if(waveTimeRemaining<300){
+      timeEl.style.color='#ff0';
+      timeEl.style.textShadow='0 0 6px #ff0';
+    }else{
+      timeEl.style.color='#0f0';
+      timeEl.style.textShadow='0 0 6px #0f0';
+    }
+  }
   updatePowerupStatus();
   // 连击显示
   const comboEl=document.getElementById('combo-display');
@@ -1792,6 +1824,10 @@ function nextWave(){
   // Wave transition countdown - 3 seconds before enemies start spawning
   waveTransitionTimer=180;
   waveTransitionCountdown=3;
+  // Time challenge: 30 seconds per wave + 2 seconds per enemy
+  waveTimeLimit=1800+totalEnemies*120;
+  waveTimeRemaining=waveTimeLimit;
+  waveRageMode=false;
   spawnTimer=0;
   flashTimer=30;
   updateHUD();
@@ -2053,6 +2089,20 @@ function update(){
       }
     }
   }
+
+  // Time challenge - count down wave time
+  if(waveTimeRemaining>0&&!waveRageMode&&gameState==='playing'&&waveTransitionTimer<=0){
+    waveTimeRemaining--;
+    if(waveTimeRemaining<=0){
+      // Rage mode activated!
+      waveRageMode=true;
+      rageFlashTimer=60;
+      screenShake=10;
+    }
+  }
+
+  // Update rage flash timer
+  if(rageFlashTimer>0)rageFlashTimer--;
 
   const waveSpawnDone=spawnQueue.length===0&&enemiesLeft===0&&enemies.length===0;
   if(waveSpawnDone&&gameState==='playing'){
