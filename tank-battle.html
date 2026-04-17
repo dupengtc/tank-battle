@@ -39,6 +39,9 @@
   .pu-icon{width:20px;height:20px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:12px;position:relative;overflow:visible}
   .pu-icon .pu-bar{position:absolute;bottom:-4px;left:0;width:100%;height:3px;background:#333;border-radius:1px}
   .pu-icon .pu-bar-fill{height:100%;border-radius:1px;transition:width 0.1s}
+  body.high-contrast #c{filter:contrast(1.5)brightness(1.2)}
+  body.high-contrast .hud-val{color:#fff;text-shadow:0 0 10px #fff}
+  body.high-contrast .enemy{filter:contrast(1.5)}
 </style>
 </head>
 <body>
@@ -1534,8 +1537,8 @@ function drawMinimap(){
     }
   }
   if(base&&base.alive){
-    mmCtx.fillStyle='#da0';
-    mmCtx.fillRect(base.x/GW*80,base.y/(H-HUD_H)*60,4,4);
+    mmCtx.fillStyle='#00f'; // 蓝色基地标记
+    mmCtx.fillRect(base.x/GW*80,base.y/(H-HUD_H)*60,5,5);
   }
   enemies.forEach(e=>e.drawMinimap());
   if(player&&player.alive)player.drawMinimap();
@@ -1768,6 +1771,7 @@ function update(){
 
 let lastTime=0;
 let fps=0,fpsFrames=0,fpsTimer=0,showFps=false;
+let highContrast=false;
 function gameLoop(ts){
   requestAnimationFrame(gameLoop);
   const dt=ts-lastTime;
@@ -1901,6 +1905,30 @@ document.addEventListener('keydown',e=>{
   }
   if(e.code==='KeyF'){
     showFps=!showFps;
+  }
+  if(e.code==='KeyH'){
+    highContrast=!highContrast;
+    document.body.classList.toggle('high-contrast',highContrast);
+  }
+  if(e.code==='KeyP'){
+    // 暂停
+    if(gameState==='playing'){
+      gameState='paused';
+      stopBgMusic();
+      const msg=document.getElementById('msg');
+      msg.innerHTML=`<h1 style="font-size:28px">暂停</h1><h2>PAUSED</h2><p class="blink">[ PRESS ENTER 继续 ]</p>`;
+      msg.style.display='block';
+    }
+  }
+  if(e.code==='KeyR'){
+    // 重新开始本波
+    if(gameState==='playing'){
+      enemies=[];bullets=[];
+      for(let i=0;i<Math.min(4,totalEnemies);i++){
+        spawnQueue.push({delay:i*spawnInterval});
+      }
+      spawnTimer=0;
+    }
   }
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)){
     e.preventDefault();
