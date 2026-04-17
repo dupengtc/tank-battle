@@ -92,7 +92,7 @@ mm.width=80;mm.height=60;
 let gameState='start',score=0,hiScore=0,lives=3,wave=1,enemiesLeft=0,totalEnemies=0,spawnQueue=[];
 let player,player2,enemies=[],bullets=[],explosions=[],powerups=[],particles=[],tankDebris=[];
 let bricks=[],steels=[],waters=[],forests=[],base;
-let keys={},muted=false;
+let keys={},muted=localStorage.getItem('tankMuted')==='true';
 let lastShot=0,lastShotCd=350;
 let gameTime=0,spawnTimer=0,spawnInterval=120;
 let shieldTimer=0,rapidTimer=0,bigBulletTimer=0;
@@ -193,6 +193,31 @@ function playWaveFanfare(){
   const fanfare=[400,500,600,800,1000];
   fanfare.forEach((f,i)=>setTimeout(()=>playTone(f,'square',0.12,0.1),i*80));
   setTimeout(()=>playTone(1200,'square',0.25,0.12),400);
+}
+// 静音指示器
+let muteIndicatorTimer=0;
+function showMuteIndicator(){
+  muteIndicatorTimer=60;
+}
+function updateMuteIndicator(){
+  if(muteIndicatorTimer>0){
+    muteIndicatorTimer--;
+    const wrap=document.getElementById('wrap');
+    if(wrap){
+      const existing=document.getElementById('mute-badge');
+      if(muteIndicatorTimer>0&&muted){
+        if(!existing){
+          const badge=document.createElement('div');
+          badge.id='mute-badge';
+          badge.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:#f44;font-size:24px;padding:15px 25px;border:2px solid #f44;z-index:10;border-radius:8px';
+          badge.textContent='🔇 静音';
+          wrap.appendChild(badge);
+        }
+      }else if(existing){
+        existing.remove();
+      }
+    }
+  }
 }
 
 function spawnMuzzleFlash(x,y,dir){
@@ -1637,6 +1662,7 @@ function gameLoop(ts){
     update();
   }
   updateBgParticles();
+  updateMuteIndicator();
   ctx.save();
   if(screenShake>0.5){
     ctx.translate((Math.random()-0.5)*screenShake*2,(Math.random()-0.5)*screenShake*2);
@@ -1736,6 +1762,9 @@ document.addEventListener('keydown',e=>{
   }
   if(e.code==='KeyM'){
     muted=!muted;
+    localStorage.setItem('tankMuted',muted);
+    if(muted)stopBgMusic();else if(gameState==='playing')startBgMusic();
+    showMuteIndicator();
   }
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)){
     e.preventDefault();
