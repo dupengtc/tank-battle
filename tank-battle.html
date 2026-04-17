@@ -100,7 +100,7 @@ let bricks=[],steels=[],waters=[],forests=[],base;
 let keys={},muted=localStorage.getItem('tankMuted')==='true';
 let lastShot=0,lastShotCd=350;
 let gameTime=0,spawnTimer=0,spawnInterval=120;
-let shieldTimer=0,rapidTimer=0,bigBulletTimer=0;
+let shieldTimer=0,rapidTimer=0,bigBulletTimer=0,grenadeCount=0;
 let screenShake=0,flashTimer=0,flashColor='rgba(255,255,0,0.3)';
 let audioCtx=null;
 let isTwoPlayer=false;
@@ -1013,9 +1013,9 @@ function spawnEnemy(){
 function spawnPowerup(x,y){
   // Balance: reduce powerup spawn rate
   if(Math.random()>0.3)return;
-  const types=['life','rapid','big','shield','star'];
+  const types=['life','rapid','big','shield','star','grenade'];
   // Weighted selection
-  const weights=[0.15,0.25,0.25,0.15,0.2];
+  const weights=[0.12,0.2,0.2,0.12,0.18,0.18];
   let r=Math.random(),cum=0;
   let type='star';
   for(let i=0;i<types.length;i++){
@@ -1164,6 +1164,8 @@ function applyPowerup(pu,tank){
       if(tank.level===3)playLevelUp();
       updateTankLevel();
     }
+  }else if(pu==='grenade'){
+    grenadeCount++;
   }
 }
 
@@ -1206,6 +1208,39 @@ function updatePowerupStatus(){
   addPu(rapidTimer,'rapid',1200);
   addPu(bigBulletTimer,'big',1200);
   addPu(shieldTimer,'shield',600);
+  // 手雷数量显示
+  if(grenadeCount>0){
+    const div=document.createElement('div');
+    div.className='pu-icon';
+    div.style.cssText=`background:#0f0;box-shadow:0 0 6px #0f0`;
+    div.textContent=`💣×${grenadeCount}`;
+    div.style.cssText=`background:transparent;border:2px solid #0f0;box-shadow:0 0 6px #0f0;color:#0f0;font-weight:bold`;
+    container.appendChild(div);
+  }
+}
+
+// 手雷使用
+function useGrenade(){
+  if(grenadeCount<=0||gameState!=='playing')return;
+  grenadeCount--;
+  playExplode(true);
+  // 消灭所有敌人
+  for(const e of enemies){
+    if(e.alive){
+      tankDebris.push(new TankDebris(e.x+TS/2,e.y+TS/2,e.dir,e.tankColor));
+      e.alive=false;
+      createExplosion(e.cx,e.cy,true);
+      score+=100*(e.type+1);
+      killCount++;
+      enemiesLeft=Math.max(0,enemiesLeft-1);
+    }
+  }
+  enemies=enemies.filter(e=>e.alive);
+  // 屏幕震动
+  screenShake=20;
+  flashTimer=15;
+  flashColor='rgba(255,200,0,0.4)';
+  updateHUD();
 }
 
 function formatScore(s){
@@ -1350,7 +1385,7 @@ function startGame(twoPlayer=false){
   spawnQueue=[];
   shieldTimer=0;rapidTimer=0;bigBulletTimer=0;
   isTwoPlayer=twoPlayer;
-  killCount=0;shotsFired=0;shotsHit=0;survivalTime=0;restartPromptTimer=0;
+  killCount=0;shotsFired=0;shotsHit=0;survivalTime=0;restartPromptTimer=0;grenadeCount=0;
 
   generateMap(wave);
   const baseTX=Math.floor(G/2)-1;
@@ -1800,6 +1835,9 @@ document.addEventListener('keydown',e=>{
     localStorage.setItem('tankMuted',muted);
     if(muted)stopBgMusic();else if(gameState==='playing')startBgMusic();
     showMuteIndicator();
+  }
+  if(e.code==='KeyG'){
+    useGrenade();
   }
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)){
     e.preventDefault();
