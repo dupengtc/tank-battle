@@ -2655,6 +2655,24 @@ function update(){
   if(player)powerups.forEach(p=>collectPowerup(p,player));
   if(player2)powerups.forEach(p=>collectPowerup(p,player2));
 
+  // Co-op powerup sharing: when one player gets a powerup, nearby teammate gets partial benefit
+  if(isTwoPlayer&&player&&player2&&player.alive&&player2.alive){
+    const dx=Math.abs(player.cx-player2.cx);
+    const dy=Math.abs(player.cy-player2.cy);
+    const nearby=dx<TS*4&&dy<TS*4;
+    if(nearby){
+      // Share shield time
+      if(player.shieldTimer>player2.shieldTimer+60){
+        player2.shieldTimer=Math.min(player.shieldTimer,player2.shieldTimer+60);
+        player2.shield=true;
+      }
+      // Share rapid fire
+      if(rapidTimer>0){
+        player2.rapid=true;
+      }
+    }
+  }
+
   // Co-op revival system
   if(isTwoPlayer&&(playerDead||player2Dead)){
     revivalTimer--;
