@@ -101,6 +101,7 @@ let keys={},muted=localStorage.getItem('tankMuted')==='true';
 let lastShot=0,lastShotCd=350;
 let gameTime=0,spawnTimer=0,spawnInterval=120;
 let shieldTimer=0,rapidTimer=0,bigBulletTimer=0,grenadeCount=0;
+let puBlinkTimer=0; // 道具不足3秒闪烁计时
 let screenShake=0,flashTimer=0,flashColor='rgba(255,255,0,0.3)';
 let audioCtx=null;
 let isTwoPlayer=false;
@@ -1148,14 +1149,14 @@ function applyPowerup(pu,tank){
     if(lives<5)lives++;
     updateLivesDisplay();
   }else if(pu==='rapid'){
-    rapidTimer=1200;
+    rapidTimer=Math.min(rapidTimer+600,1800); // 时间叠加，最大30秒
     if(tank)tank.rapid=true;
   }else if(pu==='big'){
-    bigBulletTimer=1200;
+    bigBulletTimer=Math.min(bigBulletTimer+600,1800);
     if(tank)tank.bigBullet=true;
   }else if(pu==='shield'){
-    shieldTimer=600;
-    if(tank){tank.shield=true;tank.shieldTimer=600;}
+    shieldTimer=Math.min(shieldTimer+300,900); // 时间叠加，最大15秒
+    if(tank){tank.shield=true;tank.shieldTimer=shieldTimer;}
     playShield();
   }else if(pu==='star'){
     if(tank){
@@ -1195,12 +1196,17 @@ function updatePowerupStatus(){
   if(!container)return;
   container.innerHTML='';
 
+  // 闪烁警告（低于3秒=180帧时闪烁）
+  puBlinkTimer=(puBlinkTimer+1)%30;
+  const isBlinking=(timer)=>timer>0&&timer<=180&&puBlinkTimer<15;
+
   const addPu=(timer,name,maxTimer)=>{
     if(timer<=0)return;
     const percent=(timer/maxTimer)*100;
     const div=document.createElement('div');
     div.className='pu-icon';
-    div.style.cssText=`background:${puColors[name]};box-shadow:0 0 6px ${puColors[name]}`;
+    const blink=isBlinking(timer);
+    div.style.cssText=`background:${puColors[name]};box-shadow:0 0 6px ${puColors[name]};opacity:${blink?0.5+puBlinkTimer/30:1}`;
     div.innerHTML=`${puIcons[name] || '?'}<div class="pu-bar"><div class="pu-bar-fill" style="width:${percent}%;background:${puColors[name]}"></div></div>`;
     container.appendChild(div);
   };
@@ -1212,11 +1218,11 @@ function updatePowerupStatus(){
   if(grenadeCount>0){
     const div=document.createElement('div');
     div.className='pu-icon';
-    div.style.cssText=`background:#0f0;box-shadow:0 0 6px #0f0`;
     div.textContent=`💣×${grenadeCount}`;
     div.style.cssText=`background:transparent;border:2px solid #0f0;box-shadow:0 0 6px #0f0;color:#0f0;font-weight:bold`;
     container.appendChild(div);
   }
+}
 }
 
 // 手雷使用
