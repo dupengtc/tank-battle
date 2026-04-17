@@ -19,10 +19,14 @@
   .hud-val.red{color:#f44;text-shadow:0 0 6px #f44}
   .hud-val.gold{color:#fd0;text-shadow:0 0 6px #fd0}
   #msg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;z-index:5;display:none;pointer-events:none}
-  #msg h1{font-size:36px;color:#0f0;text-shadow:0 0 20px #0f0,0 0 40px #0a0;margin-bottom:16px;letter-spacing:4px}
+  #msg h1{font-size:36px;color:#0f0;text-shadow:0 0 20px #0f0,0 0 40px #0a0;margin-bottom:16px;letter-spacing:4px;animation:glow 2s ease-in-out infinite}
   #msg h2{font-size:20px;color:#ff0;text-shadow:0 0 10px #ff0;margin-bottom:12px}
   #msg p{color:#aaa;font-size:13px;line-height:1.8}
   #msg .blink{animation:blink 1s infinite}
+  #msg .btn-hint{animation:btnPulse 1.5s ease-in-out infinite;cursor:pointer;transition:transform 0.2s}
+  #msg .btn-hint:hover{transform:scale(1.1);color:#0f0}
+  @keyframes glow{0%,100%{text-shadow:0 0 20px #0f0,0 0 40px #0a0,0 0 60px #0f0}50%{text-shadow:0 0 30px #0f0,0 0 60px #0a0,0 0 80px #0f0}}
+  @keyframes btnPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.8;transform:scale(1.05)}}
   @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
   .lives{display:flex;gap:4px}
   .life-icon{width:14px;height:14px;background:#0f0;clip-path:polygon(50% 0%,100% 30%,100% 100%,0 100%,0 30%);box-shadow:0 0 4px #0f0}
@@ -1228,6 +1232,7 @@ function respawnPlayer2(){
 
 function startGame(twoPlayer=false){
   initAudio();
+  stopBgParticles();
   score=0;lives=3;wave=1;
   enemies=[];bullets=[];explosions=[];powerups=[];particles=[];tankDebris=[];
   spawnQueue=[];
@@ -1558,11 +1563,15 @@ function gameLoop(ts){
   if(gameState==='playing'){
     update();
   }
+  updateBgParticles();
   ctx.save();
   if(screenShake>0.5){
     ctx.translate((Math.random()-0.5)*screenShake*2,(Math.random()-0.5)*screenShake*2);
   }
   draw();
+  if(gameState==='start'||gameState==='gameover'){
+    drawBgParticles();
+  }
   animateScoreGain(); // 得分放大动画
   ctx.restore();
   if(flashTimer>0){
@@ -1574,6 +1583,51 @@ function gameLoop(ts){
   drawMinimap();
 }
 
+// 开始画面背景粒子
+let bgParticles=[];
+let bgParticleActive=false;
+function startBgParticles(){
+  bgParticles=[];
+  bgParticleActive=true;
+  for(let i=0;i<30;i++){
+    bgParticles.push({
+      x:Math.random()*GW,
+      y:Math.random()*(H-HUD_H),
+      vx:(Math.random()-0.5)*0.5,
+      vy:(Math.random()-0.5)*0.5,
+      size:1+Math.random()*2,
+      alpha:0.2+Math.random()*0.3,
+      color:Math.random()>0.5?'#0f0':'#ff0'
+    });
+  }
+}
+function updateBgParticles(){
+  if(!bgParticleActive)return;
+  for(const p of bgParticles){
+    p.x+=p.vx;
+    p.y+=p.vy;
+    if(p.x<0)p.x=GW;
+    if(p.x>GW)p.x=0;
+    if(p.y<0)p.y=H-HUD_H;
+    if(p.y>H-HUD_H)p.y=0;
+  }
+}
+function drawBgParticles(){
+  if(!bgParticleActive)return;
+  for(const p of bgParticles){
+    ctx.save();
+    ctx.globalAlpha=p.alpha;
+    ctx.fillStyle=p.color;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+function stopBgParticles(){
+  bgParticleActive=false;
+}
+
 function showStartScreen(){
   const msg=document.getElementById('msg');
   msg.innerHTML=`<h1>坦克大战</h1><h2>BATTLE CITY</h2>
@@ -1581,8 +1635,9 @@ function showStartScreen(){
     <p>玩家2: WASD移动 | E射击 (双人模式)</p>
     <p>回车 - 单人开始 | Shift+回车 - 双人开始</p>
     <p>M - 静音</p>
-    <p class="blink" style="margin-top:16px">[ PRESS ENTER ]</p>`;
+    <p class="blink btn-hint" style="margin-top:16px">[ PRESS ENTER ]</p>`;
   msg.style.display='block';
+  startBgParticles();
 }
 
 document.addEventListener('keydown',e=>{
