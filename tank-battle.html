@@ -12,6 +12,8 @@
   #overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.03);pointer-events:none;z-index:2;
     background-image:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.08) 2px,rgba(0,0,0,0.08) 4px)}
   #scanlines{position:absolute;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.15),rgba(0,0,0,0.15) 1px,transparent 1px,transparent 2px);pointer-events:none;z-index:3;opacity:0.4}
+  #vignette{position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.5) 100%);pointer-events:none;z-index:3}
+  #crt-effect{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:3;mix-blend-mode:screen;opacity:0.03}
   #hud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;padding:6px 12px;background:rgba(0,0,0,0.85);color:#0f0;font-size:13px;z-index:4;border-bottom:1px solid #333;font-family:'Courier New',monospace}
   .hud-item{display:flex;align-items:center;gap:8px}
   .hud-label{color:#888;font-size:11px;letter-spacing:1px}
@@ -82,6 +84,7 @@
   <canvas id="c"></canvas>
   <div id="overlay"></div>
   <div id="scanlines"></div>
+  <div id="vignette"></div>
   <div id="msg">
     <h1>坦克大战</h1>
     <h2>BATTLE CITY</h2>
@@ -113,6 +116,8 @@ let puBlinkTimer=0; // 道具不足3秒闪烁计时
 // 连击系统
 let comboCount=0,comboTimer=0,comboMultiplier=1;
 let screenShake=0,flashTimer=0,flashColor='rgba(255,255,0,0.3)';
+// 游戏手感
+let slowMotionTimer=0,hitStopTimer=0;
 let audioCtx=null;
 let isTwoPlayer=false;
 
@@ -1270,6 +1275,7 @@ function useGrenade(){
   enemies=enemies.filter(e=>e.alive);
   // 屏幕震动
   screenShake=20;
+  slowMotionTimer=12; // 0.2秒慢动作
   flashTimer=15;
   flashColor='rgba(255,200,0,0.4)';
   updateHUD();
@@ -1681,6 +1687,7 @@ function update(){
           score+=100*(e.type+1)*comboMultiplier;
           playExplode();
           createExplosion(e.cx,e.cy,true); // 大爆炸
+          hitStopTimer=3; // 0.05秒hit-stop
           spawnPowerup(e.x,e.y);
           enemiesLeft=Math.max(0,enemiesLeft-1);
           updateHUD();
@@ -1783,10 +1790,17 @@ function gameLoop(ts){
     fpsFrames=0;
     fpsTimer=0;
   }
+  // Hit-stop暂停
+  if(hitStopTimer>0){hitStopTimer--;return;}
   // 超过60FPS时跳帧
   if(dt<16.67)return;
   lastTime=ts;
-  if(gameState==='playing'){
+  // 慢动作处理
+  const useUpdate= slowMotionTimer>0?(fpsFrames%(slowMotionTimer>6?4:2)!==0):true;
+  if(slowMotionTimer>0){
+    slowMotionTimer--;
+    if(useUpdate)update();
+  }else if(gameState==='playing'){
     update();
   }
   updateBgParticles();
