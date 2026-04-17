@@ -167,6 +167,98 @@ function saveGameData(){
   localStorage.setItem('tankMuted',muted.toString());
 }
 
+// Achievement system
+const ACHIEVEMENTS={
+  firstBlood:{name:'First Blood',desc:'Kill your first enemy',icon:'🩸'},
+  combo3:{name:'Combo Starter',desc:'Get a 3x combo',icon:'⚡'},
+  combo5:{name:'Combo Master',desc:'Get a 5x combo',icon:'💫'},
+  combo10:{name:'Combo Legend',desc:'Get a 10x combo',icon:'🔥'},
+  wave3:{name:'Rising Star',desc:'Reach wave 3',icon:'⭐'},
+  wave10:{name:'Veteran',desc:'Reach wave 10',icon:'🎖️'},
+  wave20:{name:'Elite',desc:'Reach wave 20',icon:'🏆'},
+  perfectWave:{name:'Perfect Wave',desc:'Clear a wave without taking damage',icon:'💎'},
+  speedDemon:{name:'Speed Demon',desc:'Kill 5 enemies in 5 seconds',icon:'🚀'},
+  noMiss:{name:'Sharpshooter',desc:'100% accuracy in a wave',icon:'🎯'},
+  tankBuster:{name:'Tank Buster',desc:'Destroy 50 enemies',icon:'💀'},
+  survivor:{name:'Survivor',desc:'Survive 5 minutes',icon:'🛡️'},
+  maxLevel:{name:'Max Power',desc:'Reach level 3 tank',icon:'🔱'},
+  mineSweeper:{name:'Mine Sweeper',desc:'Destroy 10 enemies with mines',icon:'💥'},
+  grenville:{name:'Grenville',desc:'Use 10 grenades',icon:'💣'}
+};
+let achievements={};
+let achievementQueue=[];
+let achievementPopTimer=0;
+let totalMineKills=0;
+let totalGrenadeUses=0;
+let waveDamageTaken=0; // Track if player took damage this wave
+
+function loadAchievements(){
+  try{
+    const saved=localStorage.getItem('tankAchievements');
+    if(saved)achievements=JSON.parse(saved);
+  }catch(e){}
+}
+function saveAchievements(){
+  localStorage.setItem('tankAchievements',JSON.stringify(achievements));
+}
+function unlockAchievement(key){
+  if(achievements[key])return;
+  achievements[key]=true;
+  saveAchievements();
+  const ach=ACHIEVEMENTS[key];
+  achievementQueue.push({key,ach,timer:180});
+  achievementPopTimer=180;
+}
+function updateAchievements(){
+  // First blood
+  if(killCount>=1)unlockAchievement('firstBlood');
+  // Combo achievements
+  if(comboCount>=3)unlockAchievement('combo3');
+  if(comboCount>=5)unlockAchievement('combo5');
+  if(comboCount>=10)unlockAchievement('combo10');
+  // Wave achievements
+  if(wave>=3)unlockAchievement('wave3');
+  if(wave>=10)unlockAchievement('wave10');
+  if(wave>=20)unlockAchievement('wave20');
+  // Perfect wave (no damage taken)
+  if(waveDamageTaken===0&&enemiesLeft===0&&wave>0)unlockAchievement('perfectWave');
+  // Speed demon (5 kills in 5 seconds)
+  // Tank buster
+  if(killCount>=50)unlockAchievement('tankBuster');
+  // Survivor
+  if(survivalTime>=300)unlockAchievement('survivor');
+  // Max level
+  if(player&&player.level>=3)unlockAchievement('maxLevel');
+  // Mine sweeper
+  if(totalMineKills>=10)unlockAchievement('mineSweeper');
+  // Grenville
+  if(totalGrenadeUses>=10)unlockAchievement('grenville');
+}
+function drawAchievements(){
+  if(achievementPopTimer>0){
+    achievementPopTimer--;
+    const y=200+Math.sin((180-achievementPopTimer)*0.1)*10;
+    ctx.save();
+    ctx.fillStyle='rgba(0,0,0,0.7)';
+    ctx.fillRect(GW/2-150,y-20,300,60);
+    ctx.strokeStyle='#ffd700';
+    ctx.lineWidth=2;
+    ctx.strokeRect(GW/2-150,y-20,300,60);
+    ctx.fillStyle='#fff';
+    ctx.font='14px monospace';
+    ctx.textAlign='center';
+    if(achievementQueue.length>0){
+      const ach=achievementQueue[0].ach;
+      ctx.fillText(ach.icon+' Achievement Unlocked!',GW/2,y);
+      ctx.font='12px monospace';
+      ctx.fillStyle='#aaa';
+      ctx.fillText(ach.name+': '+ach.desc,GW/2,y+18);
+    }
+    ctx.restore();
+    if(achievementPopTimer<=0&&achievementQueue.length>0)achievementQueue.shift();
+  }
+}
+
 // Unlock next level
 function unlockNextLevel(){
   const nextLevel=wave+1;
@@ -1812,6 +1904,7 @@ function startGame(twoPlayer=false){
     spawnQueue.push({delay:i*spawnInterval});
   }
   spawnTimer=0;
+  waveDamageTaken=0;
   updateHUD();
   updateLivesDisplay();
   updateTankLevel();
@@ -1857,6 +1950,7 @@ function nextWave(){
   waveRageMode=false;
   spawnTimer=0;
   flashTimer=30;
+  waveDamageTaken=0;
 
   // Dynamic difficulty: adjust based on wave performance
   // Calculate wave performance: kills per second + accuracy bonus - death penalty
@@ -2085,6 +2179,7 @@ function drawBulletPrediction(tank){
 function update(){
   if(gameState!=='playing')return;
   gameTime++;
+  survivalTime++;
   if(flashTimer>0)flashTimer--;
   if(screenShake>0)screenShake*=0.85;
   // 连击计时
@@ -2095,6 +2190,9 @@ function update(){
       comboMultiplier=1;
     }
   }
+
+  // Achievement tracking
+  updateAchievements();
 
   // Sync shield timer to player
   if(player){
@@ -2226,7 +2324,7 @@ function update(){
         return false;
       };
       if(checkHit(player)) {
-        lives--;waveDeaths++;
+        lives--;waveDeaths++;waveDamageTaken++;
         updateLivesDisplay();
         if(lives<=0){
           gameOver(false);
@@ -2234,7 +2332,7 @@ function update(){
         }
         setTimeout(respawnPlayer,1500);
       } else if(isTwoPlayer&&checkHit(player2)){
-        lives--;waveDeaths++;
+        lives--;waveDeaths++;waveDamageTaken++;
         updateLivesDisplay();
         if(lives<=0){
           gameOver(false);
@@ -2467,6 +2565,7 @@ function gameLoop(ts){
   }
   drawMinimap();
   drawWeather();
+  drawAchievements();
 }
 
 // 开始画面背景粒子
