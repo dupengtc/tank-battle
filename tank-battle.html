@@ -125,6 +125,10 @@ let isTwoPlayer=false;
 let killCount=0,shotsFired=0,shotsHit=0,survivalTime=0;
 let restartPromptTimer=0;
 
+// Wave transition
+let waveTransitionTimer=0;
+let waveTransitionCountdown=0;
+
 // Object pools
 const bulletTrailPool=[];
 const MAX_BULLET_TRAILS=100;
@@ -1499,9 +1503,9 @@ function nextWave(){
   totalEnemies=5+wave*2;
   enemiesLeft=totalEnemies;
   spawnQueue=[];
-  for(let i=0;i<Math.min(4,totalEnemies);i++){
-    spawnQueue.push({delay:Math.max(60,spawnInterval-wave*5)});
-  }
+  // Wave transition countdown - 3 seconds before enemies start spawning
+  waveTransitionTimer=180;
+  waveTransitionCountdown=3;
   spawnTimer=0;
   flashTimer=30;
   updateHUD();
@@ -1616,6 +1620,27 @@ function draw(){
   if(player&&player.alive)player.draw();
   if(player2&&player2.alive)player2.draw();
   bullets.forEach(b=>{if(b.x>-margin&&b.x<GW+margin&&b.y>-margin&&b.y<H+margin)b.draw();});
+
+  // Wave transition countdown display
+  if(waveTransitionTimer>0){
+    ctx.save();
+    ctx.fillStyle='rgba(0,0,0,0.5)';
+    ctx.fillRect(GW/2-120,H/2-60,240,80);
+    ctx.strokeStyle='#ff0';
+    ctx.lineWidth=2;
+    ctx.strokeRect(GW/2-120,H/2-60,240,80);
+    ctx.fillStyle='#ff0';
+    ctx.font='bold 20px Courier New';
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.shadowColor='#ff0';
+    ctx.shadowBlur=15;
+    ctx.fillText(`WAVE ${wave}`,GW/2,H/2-20);
+    ctx.font='bold 36px Courier New';
+    const countNum=waveTransitionCountdown>0?waveTransitionCountdown:1;
+    ctx.fillText(countNum,GW/2,H/2+15);
+    ctx.restore();
+  }
 }
 
 /* =============================================================
@@ -1658,14 +1683,19 @@ function update(){
     if(player2)player2.bigBullet=bigBulletTimer>0;
   }
 
-  // Spawn enemies
-  spawnTimer++;
-  if(spawnQueue.length>0&&spawnTimer>=spawnQueue[0].delay){
-    spawnQueue.shift();
-    if(enemiesLeft>0){
-      spawnEnemy();
-      enemiesLeft--;
-      updateHUD();
+  // Spawn enemies - only after wave transition countdown
+  if(waveTransitionTimer>0){
+    waveTransitionTimer--;
+    waveTransitionCountdown=Math.ceil(waveTransitionTimer/60);
+  } else {
+    spawnTimer++;
+    if(spawnQueue.length>0&&spawnTimer>=spawnQueue[0].delay){
+      spawnQueue.shift();
+      if(enemiesLeft>0){
+        spawnEnemy();
+        enemiesLeft--;
+        updateHUD();
+      }
     }
   }
 
