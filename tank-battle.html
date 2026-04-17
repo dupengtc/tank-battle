@@ -159,6 +159,8 @@ let selectedLevel=1;
 
 // Load saved hi-score on startup
 if(savedHiScore>hiScore)hiScore=savedHiScore;
+loadAchievements();
+loadCareerStats();
 
 // Save game data
 function saveGameData(){
@@ -257,6 +259,58 @@ function drawAchievements(){
     ctx.restore();
     if(achievementPopTimer<=0&&achievementQueue.length>0)achievementQueue.shift();
   }
+}
+
+// Career statistics
+let careerStats={totalKills:0,totalDeaths:0,totalGames:0,totalScore:0,totalTime:0,favoritePowerup:null,powerupUsage:{}};
+function loadCareerStats(){
+  try{
+    const saved=localStorage.getItem('tankCareerStats');
+    if(saved)careerStats=JSON.parse(saved);
+  }catch(e){}
+}
+function saveCareerStats(){
+  localStorage.setItem('tankCareerStats',JSON.stringify(careerStats));
+}
+function updateCareerStats(){
+  careerStats.totalKills+=killCount;
+  careerStats.totalScore+=score;
+  careerStats.totalTime+=Math.floor(survivalTime/60);
+  careerStats.totalGames++;
+}
+function recordPowerupUse(type){
+  careerStats.powerupUsage[type]=(careerStats.powerupUsage[type]||0)+1;
+}
+function drawCareerStats(){
+  ctx.save();
+  ctx.fillStyle='rgba(0,0,0,0.85)';
+  ctx.fillRect(GW/2-200,H/2-180,400,360);
+  ctx.strokeStyle='#ffd700';
+  ctx.lineWidth=3;
+  ctx.strokeRect(GW/2-200,H/2-180,400,360);
+  ctx.fillStyle='#fff';
+  ctx.font='20px monospace';
+  ctx.textAlign='center';
+  ctx.fillText('Career Statistics',GW/2,H/2-150);
+  ctx.font='14px monospace';
+  ctx.fillStyle='#aaa';
+  const stats=[
+    'Total Kills: '+careerStats.totalKills.toLocaleString(),
+    'Total Games: '+careerStats.totalGames,
+    'Total Score: '+careerStats.totalScore.toLocaleString(),
+    'Play Time: '+Math.floor(careerStats.totalTime/60)+' min',
+    'Achievements: '+Object.keys(achievements).length+'/'+Object.keys(ACHIEVEMENTS).length,
+    '',
+    '--- Session ---',
+    'Kills: '+killCount+' | Score: '+score.toLocaleString(),
+    'Wave: '+wave+' | Time: '+Math.floor(survivalTime/60)+'s'
+  ];
+  stats.forEach((s,i)=>{
+    ctx.fillText(s,GW/2,H/2-110+i*22);
+  });
+  ctx.fillStyle='#ffd700';
+  ctx.fillText('Press C to close',GW/2,H/2+175);
+  ctx.restore();
 }
 
 // Unlock next level
@@ -1739,6 +1793,7 @@ function formatScore(s){
 // 得分放大动画
 let scorePopTimer=0;
 let lastScoreDisplay=0;
+let showCareerStats=false;
 function animateScoreGain(){
   const scoreEl=document.getElementById('score');
   if(score>lastScoreDisplay){
@@ -2006,6 +2061,7 @@ function gameOver(win=false){
   }
   msg.style.display='block';
   updateHUD();
+  updateCareerStats();
 }
 
 function drawMinimap(){
@@ -2566,6 +2622,7 @@ function gameLoop(ts){
   drawMinimap();
   drawWeather();
   drawAchievements();
+  if(showCareerStats)drawCareerStats();
 }
 
 // 开始画面背景粒子
@@ -2673,6 +2730,9 @@ document.addEventListener('keydown',e=>{
     localStorage.setItem('tankMuted',muted);
     if(muted)stopBgMusic();else if(gameState==='playing')startBgMusic();
     showMuteIndicator();
+  }
+  if(e.code==='KeyC'){
+    showCareerStats=!showCareerStats;
   }
   if(e.code==='KeyG'){
     useGrenade();
