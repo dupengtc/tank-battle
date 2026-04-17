@@ -377,7 +377,7 @@ const C={
   enemy:['#c00','#c60','#c30','#933'],
   player:'#4a4',playerDark:'#383',
   exp:['#fff','#ff0','#f80','#f00','#800'],
-  pu:{life:'#f00',rapid:'#ff0',big:'#f80',shield:'#00f',star:'#0ff',frozen:'#0ef'}
+  pu:{life:'#f00',rapid:'#ff0',big:'#f80',shield:'#00f',star:'#0ff',frozen:'#0ef',repair:'#0f0'}
 };
 
 /* =============================================================
@@ -1470,7 +1470,19 @@ function generateMap(wv){
       cliffs[baseTY+dy][baseTX+dx]=0;
     }
   }
-  base={x:baseTX*TS,y:baseTY*TS+HUD_H,alive:true,hp:3};
+  // Add defensive steel walls around base (wave 3+)
+  if(wv>=3){
+    // Left wall
+    steels[baseTY][baseTX-1]=1;
+    steels[baseTY+1][baseTX-1]=1;
+    // Right wall
+    steels[baseTY][baseTX+2]=1;
+    steels[baseTY+1][baseTX+2]=1;
+    // Top corners
+    steels[baseTY-1][baseTX]=1;
+    steels[baseTY-1][baseTX+1]=1;
+  }
+  base={x:baseTX*TS,y:baseTY*TS+HUD_H,alive:true,hp:3,maxHp:3};
 }
 
 function drawMap(){
@@ -1615,7 +1627,7 @@ function spawnEnemy(){
 function spawnPowerup(x,y){
   // Balance: reduce powerup spawn rate
   if(Math.random()>0.3)return;
-  const types=['life','rapid','big','shield','star','grenade','mine','frozen'];
+  const types=['life','rapid','big','shield','star','grenade','mine','frozen','repair'];
   // Weighted selection
   const weights=[0.1,0.16,0.16,0.08,0.14,0.12,0.12,0.12];
   let r=Math.random(),cum=0;
@@ -1781,6 +1793,15 @@ function applyPowerup(pu,tank){
     mineCount++;
   }else if(pu==='frozen'){
     frozenTimer=Math.min(frozenTimer+300,600); // 冻结敌人5-10秒
+  }else if(pu==='repair'){
+    if(base&&base.alive&&base.hp<base.maxHp){
+      base.hp=Math.min(base.maxHp,base.hp+1);
+      updateHUD();
+      // Repair effect
+      flashTimer=10;
+      flashColor='rgba(0,255,0,0.3)';
+      playPowerup();
+    }
   }
 }
 
