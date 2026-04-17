@@ -129,6 +129,9 @@ let restartPromptTimer=0;
 let waveTransitionTimer=0;
 let waveTransitionCountdown=0;
 
+// Bullet prediction
+let spaceHeld=false;
+
 // Object pools
 const bulletTrailPool=[];
 const MAX_BULLET_TRAILS=100;
@@ -1671,6 +1674,61 @@ function draw(){
     ctx.fillText(countNum,GW/2,H/2+15);
     ctx.restore();
   }
+
+  // Bullet prediction line when holding space
+  if(spaceHeld&&player&&player.alive&&gameState==='playing'){
+    drawBulletPrediction(player);
+  }
+}
+
+// Draw bullet trajectory prediction
+function drawBulletPrediction(tank){
+  const bulletSpeed=tank.bigBullet||tank.level>=3?8:6;
+  let px=tank.cx,py=tank.cy;
+  const dir=tank.dir;
+  // Starting position offset
+  if(dir===0)py=tank.y-6;
+  else if(dir===1)px=tank.x+TS;
+  else if(dir===2)py=tank.y+TS;
+  else px=tank.x-6;
+
+  const vx=dir===1?bulletSpeed:dir===3?-bulletSpeed:0;
+  const vy=dir===0?-bulletSpeed:dir===2?bulletSpeed:0;
+
+  ctx.save();
+  ctx.strokeStyle='rgba(255,255,0,0.5)';
+  ctx.lineWidth=2;
+  ctx.setLineDash([8,6]);
+  ctx.shadowColor='#ff0';
+  ctx.shadowBlur=5;
+
+  let lastX=px,lastY=py;
+  for(let i=0;i<50;i++){
+    const nx=px+vx*(i+1);
+    const ny=py+vy*(i+1);
+    // Check collision with walls
+    const gx=Math.floor(nx/TS);
+    const gy=Math.floor((ny-HUD_H)/TS);
+    if(gx<0||gx>=G||gy<0||gy>=GH||(bricks[gy]&&bricks[gy][gx]>0)||(steels[gy]&&steels[gy][gx]>0)){
+      ctx.beginPath();
+      ctx.moveTo(lastX,lastY);
+      ctx.lineTo(nx,ny);
+      ctx.stroke();
+      // Draw impact marker
+      ctx.beginPath();
+      ctx.arc(nx,ny,4,0,Math.PI*2);
+      ctx.stroke();
+      break;
+    }
+    lastX=nx;lastY=ny;
+    if(i%5===0){
+      ctx.beginPath();
+      ctx.moveTo(lastX,lastY);
+      ctx.lineTo(nx,ny);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
 }
 
 /* =============================================================
@@ -1981,6 +2039,7 @@ function showStartScreen(){
    ============================================================= */
 document.addEventListener('keydown',e=>{
   keys[e.code]=true;
+  if(e.code==='Space')spaceHeld=true;
   if(e.code==='Enter'){
     if(gameState==='start'||gameState==='gameover'||gameState==='victory'){
       if(e.shiftKey){
@@ -2042,6 +2101,7 @@ document.addEventListener('keydown',e=>{
 });
 document.addEventListener('keyup',e=>{
   keys[e.code]=false;
+  if(e.code==='Space')spaceHeld=false;
 });
 
 updateTankLevel();
