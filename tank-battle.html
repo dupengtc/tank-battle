@@ -897,9 +897,11 @@ class Tank{
     ctx.rotate(this.dir*Math.PI/2);
     ctx.translate(-TS/2,-TS/2);
 
-    // Tank shadow
-    ctx.fillStyle='rgba(0,0,0,0.3)';
-    ctx.fillRect(2,2,TS-2,TS-2);
+    // Dynamic tank shadow based on direction
+    ctx.fillStyle='rgba(0,0,0,0.35)';
+    const shadowOffsets={0:{x:3,y:5},1:{x:-2,y:3},2:{x:-3,y:-2},3:{x:3,y:-2}};
+    const so=shadowOffsets[this.dir]||{x:3,y:3};
+    ctx.fillRect(so.x,so.y,TS-2,TS-2);
 
     // Tank glow effect for players
     if(this.isPlayer||this.isPlayer2){
@@ -2378,9 +2380,16 @@ function drawRipples(){
    MODULE: Rendering (draw functions)
    ============================================================= */
 function draw(){
+  // Parallax background based on player position
   ctx.fillStyle='#1a1a1a';
   ctx.fillRect(0,0,GW,H);
+  // Slight parallax offset for background
+  const px=player?player.x:0;
+  const py=player?player.y:0;
+  ctx.save();
+  ctx.translate(-px*0.02,-py*0.02);
   drawMap();
+  ctx.restore();
   drawRipples();
   // 可见性检查 - 只绘制屏幕内的对象
   const margin=TS*2;
