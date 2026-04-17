@@ -440,6 +440,9 @@ class Tank{
     this.acceleration=isPlayer?0.4:0.3;
     this.friction=0.85;
     this.maxSpeed=this.speed;
+    // Enemy aggro system
+    this.aggroTarget=null;
+    this.aggroTime=0;
   }
   get cx(){return this.x+TS/2}
   get cy(){return this.y+TS/2}
@@ -530,15 +533,25 @@ class Tank{
   ai(){
     if(this.isPlayer||this.isPlayer2)return;
     this.aiTimer++;
+    if(this.aggroTime>0)this.aggroTime--;
     const targets=player&&player.alive?[player]:[];
     if(isTwoPlayer&&player2&&player2.alive)targets.push(player2);
     if(targets.length===0)return;
 
-    // Find closest target
-    let px=targets[0].x,py=targets[0].y,td=Math.abs(px-this.x)+Math.abs(py-this.y);
-    for(const t of targets){
-      const d=Math.abs(t.x-this.x)+Math.abs(t.y-this.y);
-      if(d<td){px=t.x;py=t.y;td=d;}
+    // Find closest target - prioritize aggro target if valid
+    let px,py,td;
+    if(this.aggroTime>0){
+      const aggro=this.aggroTarget==='player1'&&player&&player.alive?player:isTwoPlayer&&this.aggroTarget==='player2'&&player2&&player2.alive?player2:null;
+      if(aggro){
+        px=aggro.x;py=aggro.y;td=Math.abs(px-this.x)+Math.abs(py-this.y);
+      }
+    }
+    if(td===undefined){
+      px=targets[0].x;py=targets[0].y;td=Math.abs(px-this.x)+Math.abs(py-this.y);
+      for(const t of targets){
+        const d=Math.abs(t.x-this.x)+Math.abs(t.y-this.y);
+        if(d<td){px=t.x;py=t.y;td=d;}
+      }
     }
 
     const dx=px-this.x,dy=py-this.y;
@@ -2141,12 +2154,15 @@ function update(){
           b.alive=false;
           shotsHit++;
           killCount++;
+          // Enemy aggro: remember who hit this enemy
+          e.aggroTarget=b.isPlayer?'player1':'player2';
+          e.aggroTime=300;
           // 坦克裂解动画
           tankDebris.push(new TankDebris(e.x+TS/2,e.y+TS/2,e.dir,e.tankColor));
           e.alive=false;
           // 连击系统
           comboCount++;
-          comboTimer=180; // 3秒 @ 60fps
+          comboTimer=180;
           if(comboCount>=10)comboMultiplier=3;
           else if(comboCount>=5)comboMultiplier=2;
           else if(comboCount>=3)comboMultiplier=1.5;
