@@ -839,6 +839,8 @@ function checkBulletCollision(b){
     bricks[gy][gx]=0;
     playHit();
     createExplosion(b.x,b.y);
+    // 砖墙碎屑粒子 - brown debris
+    spawnBrickDebris(gx*TS+TS/2,gy*TS+HUD_H+TS/2);
     return true;
   }
   if(steels[gy]&&steels[gy][gx]>0){
@@ -849,13 +851,77 @@ function checkBulletCollision(b){
       return true;
     }
     playHit();
-    // Small spark for ricochet
-    for(let i=0;i<3;i++){
-      particles.push(new Particle(b.x,b.y,'#fff',4));
-    }
+    // 钢墙黄色火花
+    spawnSteelSparks(b.x,b.y);
+    return true;
+  }
+  // 水面涟漪效果
+  if(waters[gy]&&waters[gy][gx]>0){
+    spawnWaterRipple(b.x,b.y);
+    playSplash();
     return true;
   }
   return false;
+}
+
+function spawnBrickDebris(x,y){
+  // 砖墙碎屑 - brown/tan particles
+  const colors=['#b87333','#8b4513','#cd853f','#a0522d'];
+  for(let i=0;i<8;i++){
+    const p=new Particle(x,y,colors[Math.floor(Math.random()*colors.length)],6);
+    p.vx=(Math.random()-0.5)*10;
+    p.vy=(Math.random()-0.5)*10-2;
+    p.size=2+Math.random()*3;
+    p.life=20+Math.random()*15;
+    p.maxLife=p.life;
+    particles.push(p);
+  }
+}
+
+function spawnSteelSparks(x,y){
+  // 钢墙黄色火花 - yellow/orange sparks
+  const sparkColors=['#ff0','#ffa500','#ff8c00','#ffff00'];
+  for(let i=0;i<12;i++){
+    const angle=Math.random()*Math.PI*2;
+    const speed=3+Math.random()*5;
+    const p=new Particle(x,y,sparkColors[Math.floor(Math.random()*sparkColors.length)],speed);
+    p.vx=Math.cos(angle)*speed;
+    p.vy=Math.sin(angle)*speed;
+    p.size=1+Math.random()*2;
+    p.life=10+Math.random()*10;
+    p.maxLife=p.life;
+    p.draw=function(){
+      ctx.save();
+      ctx.globalAlpha=Math.max(0,this.life/this.maxLife);
+      ctx.fillStyle=this.col;
+      ctx.shadowColor=this.col;
+      ctx.shadowBlur=4;
+      ctx.fillRect(this.x-this.size/2,this.y-this.size/2,this.size,this.size);
+      ctx.restore();
+    };
+    particles.push(p);
+  }
+}
+
+// 水波纹对象池
+const ripplePool=[];
+const MAX_RIPPLES=30;
+function spawnWaterRipple(x,y){
+  // 查找可用波纹或创建新的
+  let ripple=ripplePool.find(r=>!r.alive);
+  if(!ripple&&ripplePool.length<MAX_RIPPLES){
+    ripple={alive:true,x:0,y:0,radius:0,maxRadius:20,alpha:1};
+    ripplePool.push(ripple);
+  }
+  if(ripple){
+    ripple.alive=true;
+    ripple.x=x;
+    ripple.y=y;
+    ripple.radius=2;
+    ripple.maxRadius=15+Math.random()*10;
+    ripple.alpha=0.8;
+    ripple.life=0;
+  }
 }
 
 function checkTankHit(b,tank){
@@ -1129,10 +1195,42 @@ function drawMinimap(){
   if(player2&&player2.alive)player2.drawMinimap();
 }
 
+function drawRipples(){
+  // 更新和绘制水面涟漪
+  for(const ripple of ripplePool){
+    if(!ripple.alive)continue;
+    ripple.life++;
+    ripple.radius+=(ripple.maxRadius-ripple.radius)*0.15;
+    ripple.alpha-=0.03;
+    if(ripple.alpha<=0){
+      ripple.alive=false;
+      continue;
+    }
+    ctx.save();
+    ctx.globalAlpha=ripple.alpha;
+    ctx.strokeStyle='#4cf';
+    ctx.lineWidth=1.5;
+    ctx.shadowColor='#4cf';
+    ctx.shadowBlur=4;
+    ctx.beginPath();
+    ctx.arc(ripple.x,ripple.y,ripple.radius,0,Math.PI*2);
+    ctx.stroke();
+    // 第二层涟漪
+    if(ripple.radius>5){
+      ctx.globalAlpha=ripple.alpha*0.5;
+      ctx.beginPath();
+      ctx.arc(ripple.x,ripple.y,ripple.radius*0.6,0,Math.PI*2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+
 function draw(){
   ctx.fillStyle='#1a1a1a';
   ctx.fillRect(0,0,GW,H);
   drawMap();
+  drawRipples();
   powerups.forEach(p=>p.draw());
   explosions.forEach(e=>e.draw());
   particles.forEach(p=>p.draw());
