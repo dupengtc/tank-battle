@@ -3079,6 +3079,47 @@ document.addEventListener('keyup',e=>{
 updateTankLevel();
 showStartScreen();
 generateMap(1);
+
+// Touch controls for mobile
+let touchStartX=0,touchStartY=0,touchControlActive=false;
+canvas.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  const touch=e.touches[0];
+  touchStartX=touch.clientX;
+  touchStartY=touch.clientY;
+  touchControlActive=true;
+  // Tap to shoot
+  if(gameState==='playing'&&player&&player.alive){
+    const b=player.shoot();
+    if(b){bullets.push(b);shotsFired++;}
+  }else if(gameState==='start'||gameState==='gameover'){
+    keys['Enter']=true;
+  }
+},{passive:false});
+
+canvas.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  if(!touchControlActive||gameState!=='playing')return;
+  const touch=e.touches[0];
+  const dx=touch.clientX-touchStartX;
+  const dy=touch.clientY-touchStartY;
+  const threshold=20;
+  if(Math.abs(dx)>Math.abs(dy)){
+    if(dx>threshold)keys['ArrowRight']=true;
+    else if(dx<-threshold)keys['ArrowLeft']=true;
+  }else{
+    if(dy>threshold)keys['ArrowDown']=true;
+    else if(dy<-threshold)keys['ArrowUp']=true;
+  }
+},{passive:false});
+
+canvas.addEventListener('touchend',e=>{
+  e.preventDefault();
+  touchControlActive=false;
+  keys['ArrowUp']=false;keys['ArrowDown']=false;
+  keys['ArrowLeft']=false;keys['ArrowRight']=false;
+},{passive:false});
+
 requestAnimationFrame(gameLoop);
 </script>
 <!--
