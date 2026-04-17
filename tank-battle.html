@@ -35,6 +35,10 @@
   @keyframes fadeUp{0%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}100%{opacity:0;transform:translate(-50%,-150%) scale(1)}}
   #minimap{position:absolute;bottom:4px;right:4px;width:80px;height:60px;border:1px solid #0f0;z-index:4;opacity:0.8;background:rgba(0,20,0,0.9)}
   .hud-sep{width:1px;height:20px;background:#333;margin:0 4px}
+  #powerup-status{min-height:20px}
+  .pu-icon{width:20px;height:20px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:12px;position:relative;overflow:visible}
+  .pu-icon .pu-bar{position:absolute;bottom:-4px;left:0;width:100%;height:3px;background:#333;border-radius:1px}
+  .pu-icon .pu-bar-fill{height:100%;border-radius:1px;transition:width 0.1s}
 </style>
 </head>
 <body>
@@ -65,6 +69,7 @@
       <span class="hud-label">HI-SCORE</span>
       <span class="hud-val gold" id="hiscore">0</span>
     </div>
+    <div id="powerup-status" style="display:flex;gap:6px;align-items:center;margin-left:8px"></div>
   </div>
   <canvas id="c"></canvas>
   <div id="overlay"></div>
@@ -96,7 +101,7 @@ let keys={},muted=localStorage.getItem('tankMuted')==='true';
 let lastShot=0,lastShotCd=350;
 let gameTime=0,spawnTimer=0,spawnInterval=120;
 let shieldTimer=0,rapidTimer=0,bigBulletTimer=0;
-let screenShake=0,flashTimer=0;
+let screenShake=0,flashTimer=0,flashColor='rgba(255,255,0,0.3)';
 let audioCtx=null;
 let isTwoPlayer=false;
 
@@ -1134,6 +1139,11 @@ function checkBaseHit(b){
 
 function applyPowerup(pu,tank){
   playPowerup();
+  const puFlashColors={life:'rgba(255,0,0,0.3)',rapid:'rgba(255,255,0,0.3)',big:'rgba(255,128,0,0.3)',shield:'rgba(0,0,255,0.3)',star:'rgba(0,255,255,0.3)',grenade:'rgba(0,255,0,0.3)'};
+  if(puFlashColors[pu]){
+    flashTimer=10;
+    flashColor=puFlashColors[pu];
+  }
   if(pu==='life'){
     if(lives<5)lives++;
     updateLivesDisplay();
@@ -1172,6 +1182,30 @@ function updateHUD(){
   document.getElementById('wave').textContent=wave;
   document.getElementById('enemies').textContent=enemiesLeft;
   document.getElementById('hiscore').textContent=formatScore(hiScore);
+  updatePowerupStatus();
+}
+
+// 道具状态显示
+const puIcons={life:'♥',rapid:'⚡',big:'●',shield:'◈',star:'★',grenade:'💣'};
+const puColors={life:'#f00',rapid:'#ff0',big:'#f80',shield:'#00f',star:'#0ff',grenade:'#0f0'};
+function updatePowerupStatus(){
+  const container=document.getElementById('powerup-status');
+  if(!container)return;
+  container.innerHTML='';
+
+  const addPu=(timer,name,maxTimer)=>{
+    if(timer<=0)return;
+    const percent=(timer/maxTimer)*100;
+    const div=document.createElement('div');
+    div.className='pu-icon';
+    div.style.cssText=`background:${puColors[name]};box-shadow:0 0 6px ${puColors[name]}`;
+    div.innerHTML=`${puIcons[name] || '?'}<div class="pu-bar"><div class="pu-bar-fill" style="width:${percent}%;background:${puColors[name]}"></div></div>`;
+    container.appendChild(div);
+  };
+
+  addPu(rapidTimer,'rapid',1200);
+  addPu(bigBulletTimer,'big',1200);
+  addPu(shieldTimer,'shield',600);
 }
 
 function formatScore(s){
@@ -1675,7 +1709,8 @@ function gameLoop(ts){
   ctx.restore();
   if(flashTimer>0){
     ctx.save();
-    ctx.fillStyle=`rgba(255,255,0,${flashTimer/60})`;
+    ctx.fillStyle=flashColor;
+    ctx.globalAlpha=flashTimer/30;
     ctx.fillRect(0,0,GW,H);
     ctx.restore();
   }
