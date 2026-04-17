@@ -573,7 +573,7 @@ function drawWeather(){
     const alpha=Math.min(1,p.life/30)*0.5;
     ctx.globalAlpha=alpha;
     if(weatherType===1){
-      // Rain
+      // Rain - visibility reducing effect
       ctx.strokeStyle='#aaf';
       ctx.lineWidth=p.size;
       ctx.beginPath();
@@ -581,7 +581,7 @@ function drawWeather(){
       ctx.lineTo(p.x+p.vx*3,p.y+p.vy*3);
       ctx.stroke();
     }else{
-      // Snow
+      // Snow with footprints in snow terrain
       ctx.fillStyle='#fff';
       ctx.beginPath();
       ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
@@ -589,14 +589,34 @@ function drawWeather(){
     }
   }
   ctx.restore();
-  // Weather visibility effect
-  if(weatherType===2){
-    // Snow - slight dimming
+  // Weather visibility effects
+  if(weatherType===1){
+    // Rain - darker overlay, reduced visibility
     ctx.save();
-    ctx.globalAlpha=0.1;
+    ctx.globalAlpha=0.15;
+    ctx.fillStyle='#001';
+    ctx.fillRect(0,0,GW,H);
+    ctx.restore();
+  }
+  if(weatherType===2){
+    // Snow - brighter but dim overlay
+    ctx.save();
+    ctx.globalAlpha=0.12;
     ctx.fillStyle='#fff';
     ctx.fillRect(0,0,GW,H);
     ctx.restore();
+    // Draw snow footprints trail
+    if(tireTrails.length>0){
+      ctx.save();
+      ctx.globalAlpha=0.3;
+      for(const t of tireTrails){
+        if(t.isPlayer||t.isPlayer2){
+          ctx.fillStyle='#8cf';
+          ctx.fillRect(t.x+4,t.y+4,TS-8,TS-8);
+        }
+      }
+      ctx.restore();
+    }
   }
 }
 
