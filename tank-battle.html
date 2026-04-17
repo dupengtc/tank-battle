@@ -383,7 +383,7 @@ const C={
   enemy:['#c00','#c60','#c30','#933'],
   player:'#4a4',playerDark:'#383',
   exp:['#fff','#ff0','#f80','#f00','#800'],
-  pu:{life:'#f00',rapid:'#ff0',big:'#f80',shield:'#00f',star:'#0ff',frozen:'#0ef',repair:'#0f0'}
+  pu:{life:'#f00',rapid:'#ff0',big:'#f80',shield:'#00f',star:'#0ff',frozen:'#0ef',repair:'#0f0',invis:'#c0c',megaShield:'#0ff','2xScore':'#fd0'}
 };
 
 /* =============================================================
@@ -1333,7 +1333,7 @@ class PowerUp{
     ctx.fillStyle='#fff';
     ctx.font='bold 10px Arial';
     ctx.textAlign='center';ctx.textBaseline='middle';
-    const icons={life:'♥',rapid:'⚡',big:'●',shield:'◈',star:'★',grenade:'💣',mine:'💥',frozen:'❄',repair:'🔧'};
+    const icons={life:'♥',rapid:'⚡',big:'●',shield:'◈',star:'★',grenade:'💣',mine:'💥',frozen:'❄',repair:'🔧',invis:'👻',megaShield:'🛡️','2xScore':'✖️2'};
     ctx.fillText(icons[this.type]||'?',0,1);
     ctx.restore();
   }
@@ -1698,7 +1698,7 @@ function spawnEnemy(){
 function spawnPowerup(x,y){
   // Balance: reduce powerup spawn rate
   if(Math.random()>0.3)return;
-  const types=['life','rapid','big','shield','star','grenade','mine','frozen','repair'];
+  const types=['life','rapid','big','shield','star','grenade','mine','frozen','repair','invis','megaShield','2xScore'];
   // Weighted selection
   const weights=[0.1,0.16,0.16,0.08,0.14,0.12,0.12,0.12];
   let r=Math.random(),cum=0;
@@ -1873,6 +1873,23 @@ function applyPowerup(pu,tank){
       flashColor='rgba(0,255,0,0.3)';
       playPowerup();
     }
+  }else if(pu==='invis'){
+    // Invisibility - player becomes invisible to enemies for 8 seconds
+    if(tank){
+      tank.invisible=true;
+      tank.invisibleTimer=480; // 8 seconds
+    }
+  }else if(pu==='megaShield'){
+    // Mega shield - full protection for 15 seconds
+    shieldTimer=Math.min(shieldTimer+900,1200);
+    if(tank){tank.shield=true;tank.shieldTimer=1200;}
+    playShield();
+  }else if(pu==='2xScore'){
+    // Double score for 15 seconds
+    comboMultiplier*=2;
+    flashTimer=10;
+    flashColor='rgba(255,215,0,0.3)';
+    setTimeout(()=>{comboMultiplier/=2;},15000);
   }
 }
 
