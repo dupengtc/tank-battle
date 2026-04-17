@@ -718,21 +718,29 @@ class Tank{
     if(this.aggroTime>0)this.aggroTime--;
     const targets=player&&player.alive?[player]:[];
     if(isTwoPlayer&&player2&&player2.alive)targets.push(player2);
-    if(targets.length===0)return;
+    if(targets.length===0&&(!base||!base.alive))return;
 
     // Find closest target - prioritize aggro target if valid
     let px,py,td;
-    if(this.aggroTime>0){
+    // Heavy tanks (type 2) sometimes target the base instead
+    const baseTarget=base&&base.alive&&(this.type===2||this.type===3)&&Math.random()<0.2;
+    if(baseTarget){
+      px=base.x;py=base.y;td=Math.abs(px-this.x)+Math.abs(py-this.y);
+    }else if(this.aggroTime>0){
       const aggro=this.aggroTarget==='player1'&&player&&player.alive?player:isTwoPlayer&&this.aggroTarget==='player2'&&player2&&player2.alive?player2:null;
       if(aggro){
         px=aggro.x;py=aggro.y;td=Math.abs(px-this.x)+Math.abs(py-this.y);
       }
     }
     if(td===undefined){
-      px=targets[0].x;py=targets[0].y;td=Math.abs(px-this.x)+Math.abs(py-this.y);
-      for(const t of targets){
-        const d=Math.abs(t.x-this.x)+Math.abs(t.y-this.y);
-        if(d<td){px=t.x;py=t.y;td=d;}
+      if(targets.length>0){
+        px=targets[0].x;py=targets[0].y;td=Math.abs(px-this.x)+Math.abs(py-this.y);
+        for(const t of targets){
+          const d=Math.abs(t.x-this.x)+Math.abs(t.y-this.y);
+          if(d<td){px=t.x;py=t.y;td=d;}
+        }
+      }else if(base&&base.alive){
+        px=base.x;py=base.y;td=Math.abs(px-this.x)+Math.abs(py-this.y);
       }
     }
 
