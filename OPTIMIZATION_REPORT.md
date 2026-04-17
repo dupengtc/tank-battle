@@ -124,3 +124,9 @@
 - **改动：** 代码格式优化；添加制作人员名单注释
 - **影响：** 代码更规范，项目信息完整
 - **Commit:** 08c8d03
+
+### Round 31: 代码结构模块化
+- **类别：** 代码质量
+- **改动：** 添加清晰的分节注释（Constants、Audio、Entity、Map、HUD、Game Logic、Input、GameLoop、Rendering、Events）；整理代码组织结构
+- **影响：** 代码更易于维护和理解
+- **Commit:** 74c4255
