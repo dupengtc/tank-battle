@@ -125,6 +125,29 @@ let isTwoPlayer=false;
 let killCount=0,shotsFired=0,shotsHit=0,survivalTime=0;
 let restartPromptTimer=0;
 
+// Save system
+let unlockedLevels=parseInt(localStorage.getItem('tankUnlockedLevels'))||1;
+let savedHiScore=parseInt(localStorage.getItem('tankHiScore'))||0;
+
+// Load saved hi-score on startup
+if(savedHiScore>hiScore)hiScore=savedHiScore;
+
+// Save game data
+function saveGameData(){
+  localStorage.setItem('tankHiScore',hiScore.toString());
+  localStorage.setItem('tankUnlockedLevels',unlockedLevels.toString());
+  localStorage.setItem('tankMuted',muted.toString());
+}
+
+// Unlock next level
+function unlockNextLevel(){
+  const nextLevel=wave+1;
+  if(nextLevel>unlockedLevels&&nextLevel<=5){
+    unlockedLevels=nextLevel;
+    saveGameData();
+  }
+}
+
 // Wave transition
 let waveTransitionTimer=0;
 let waveTransitionCountdown=0;
@@ -1551,7 +1574,11 @@ function nextWave(){
 function gameOver(win=false){
   stopBgMusic();
   gameState=win?'victory':'gameover';
-  if(score>hiScore)hiScore=score;
+  if(score>hiScore){
+    hiScore=score;
+    saveGameData(); // Save new high score
+  }
+  if(win)unlockNextLevel(); // Unlock next level on victory
   const msg=document.getElementById('msg');
   const survivalSec=Math.floor(gameTime/60);
   const accuracy=shotsFired>0?Math.round(shotsHit/shotsFired*100):0;
