@@ -1467,6 +1467,13 @@ class Explosion{
       ctx.beginPath();
       ctx.arc(cx+Math.cos(Date.now()/50)*3,cy+Math.sin(Date.now()/50)*3,r*0.7,0,Math.PI*2);
       ctx.fill();
+      // R109: Shockwave ring effect
+      ctx.globalAlpha=(1-p)*0.3;
+      ctx.strokeStyle='#fff';
+      ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.arc(cx,cy,r*1.5*(1+p),0,Math.PI*2);
+      ctx.stroke();
     }
 
     // Particles
