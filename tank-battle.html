@@ -3754,9 +3754,17 @@ document.addEventListener('keydown',e=>{
       gameState='paused';
       stopBgMusic();
       const msg=document.getElementById('msg');
+      // R112: Show stats during pause
+      const accuracy=shotsFired>0?Math.round(shotsHit/shotsFired*100):0;
       msg.innerHTML=`
         <h1 style="font-size:32px;color:#ff0">PAUSED</h1>
-        <div style="margin:20px 0">
+        <div style="background:rgba(0,0,0,0.5);padding:10px;margin:10px 0;border:1px solid #ff0;text-align:left">
+          <p style="color:#fff">SCORE: ${formatScore(score)}</p>
+          <p style="color:#fff">WAVE: ${wave}</p>
+          <p style="color:#fff">ENEMIES KILLED: ${killCount}</p>
+          <p style="color:#fff">ACCURACY: ${accuracy}%</p>
+        </div>
+        <div style="margin:10px 0">
           <p onclick="resumeGame()" class="blink" style="cursor:pointer;color:#0f0;font-size:16px">[ RESUME ]</p>
           <p onclick="restartWave()" style="cursor:pointer;color:#ff0;font-size:14px;margin-top:10px">[ RESTART WAVE ]</p>
           <p onclick="showSettings()" style="cursor:pointer;color:#ff0;font-size:14px;margin-top:8px">[ SETTINGS ]</p>
