@@ -133,8 +133,7 @@ function initObjectPools(){
   for(let i=0;i<PARTICLE_POOL_SIZE;i++)particlePool.push(new Particle(0,0,'#fff',0));
   for(let i=0;i<EXPLOSION_POOL_SIZE;i++)explosionPool.push(new Explosion(0,0,false));
 }
-initObjectPools(); // R71: Initialize pools at startup
-initTerrainCache(); // R72: Initialize terrain cache
+// R71+R72: Pool and cache init moved to after class definitions (see below)
 
 // Get object from pool
 function getBullet(){
@@ -195,13 +194,13 @@ let terrainCacheValid=false;
 function initTerrainCache(){
   if(!terrainCanvas){
     terrainCanvas=document.createElement('canvas');
-    terrainCanvas.width=GW;terrainHeight=H-HUD_H;
+    terrainCanvas.width=GW;terrainCanvas.height=H-HUD_H;
     terrainCtx=terrainCanvas.getContext('2d');
   }
 }
 function invalidateTerrainCache(){terrainCacheValid=false;}
 function renderTerrainToCache(){
-  if(!terrainCacheValid)return;
+  if(terrainCacheValid)return;
   const tc=terrainCtx,TS2=TS;
   for(let y=0;y<GH;y++){
     for(let x=0;x<G;x++){
@@ -1772,6 +1771,10 @@ class PowerUp{
     ctx.restore();
   }
 }
+
+// R71: Initialize pools after all classes are defined
+initObjectPools();
+initTerrainCache();
 
 /* =============================================================
    MODULE: Map Generation & Rendering
@@ -3582,6 +3585,9 @@ function stopBgParticles(){
   bgParticleActive=false;
 }
 
+// R101: Start screen animation state
+let startScreenTitleY=0;
+let startScreenTitleVel=0;
 function showStartScreen(){
   const msg=document.getElementById('msg');
   let levelButtons='';
@@ -3592,6 +3598,17 @@ function showStartScreen(){
       levelButtons+=`<span style="margin:0 4px;color:#333;font-size:18px">[${i}]</span>`;
     }
   }
+  // R101: Simplified controls - cleaner presentation
+  const controlsHTML=`
+    <div style="background:rgba(0,0,0,0.5);padding:12px 20px;border-radius:8px;margin:15px auto;max-width:400px">
+      <p style="color:#ff0;margin:4px 0">🎮 CONTROLS</p>
+      <p style="color:#0f0;margin:4px 0">⬆⬇⬅➡ Arrow Keys - Move</p>
+      <p style="color:#0f0;margin:4px 0">SPACE - Shoot</p>
+      <p style="color:#f80;margin:4px 0">🏠 Protect Your Base!</p>
+    </div>
+  `;
+  // R101: High score display
+  const hiScoreHTML=hiScore>0?`<p style="color:#f0f;margin-top:8px">★ HIGH SCORE: ${hiScore}</p>`:'';
   // R91-R95: Game mode selection
   const modeButtons=`
     <div style="margin-top:12px;border-top:1px solid #333;padding-top:10px">
@@ -3602,16 +3619,22 @@ function showStartScreen(){
       <span onclick="startDailyChallenge()" style="cursor:pointer;color:#0f0;font-size:12px">[4] DAILY</span>
     </div>
   `;
-  msg.innerHTML=`<h1>坦克大战</h1><h2>BATTLE CITY</h2>
-    <p>玩家1: 方向键移动 | 空格射击</p>
-    <p>玩家2: WASD移动 | E射击 (双人模式)</p>
-    <p>选择关卡: ${levelButtons}</p>
-    <p style="margin-top:8px">回车 - 单人开始 | Shift+回车 - 双人开始</p>
-    <p>M - 静音 | P/ESC - 暂停</p>
+  // R101: Cleaner start screen layout
+  msg.innerHTML=`
+    <h1 style="font-size:42px;color:#0f0;text-shadow:0 0 20px #0f0,0 0 40px #0a0;margin-bottom:5px" class="title-glow">TANK BATTLE</h1>
+    <h2 style="font-size:18px;color:#ff0;margin-top:0">Battle City</h2>
+    ${controlsHTML}
+    <p style="margin-top:10px">Select Level: ${levelButtons}</p>
+    ${hiScoreHTML}
+    <p style="margin-top:8px;color:#aaa;font-size:11px">ENTER - Start | SHIFT+ENTER - 2P</p>
+    <p style="color:#666;font-size:11px">M - Mute | P - Pause</p>
     ${modeButtons}
-    <p class="blink btn-hint" style="margin-top:16px">[ PRESS ENTER ]</p>`;
+    <p class="blink btn-hint" style="margin-top:20px;font-size:18px;color:#0f0">[ PRESS ENTER ]</p>`;
   msg.style.display='block';
   startBgParticles();
+  // R101: Reset title animation
+  startScreenTitleY=0;
+  startScreenTitleVel=0;
 }
 
 /* =============================================================
