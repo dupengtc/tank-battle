@@ -844,28 +844,29 @@ function updateMuteIndicator(){
    MODULE: Entity Classes (Tank, Bullet, Explosion, Particle, etc.)
    ============================================================= */
 function spawnMuzzleFlash(x,y,dir){
-  const colors=['#ff0','#f80','#f44','#fff','#ff8'];
+  // R132: Enhanced muzzle flash with more particles, glow and trails
+  const colors=['#ff0','#f80','#f44','#fff','#ff8','#fa0','#f64'];
   const dirOffsets={0:{vx:0,vy:-1},1:{vx:1,vy:0},2:{vx:0,vy:1},3:{vx:-1,vy:0}};
   const offset=dirOffsets[dir];
-  for(let i=0;i<10;i++){
+  for(let i=0;i<15;i++){
     const p=getParticle();
-    p.reset(x,y,colors[Math.floor(Math.random()*colors.length)],4);
-    p.vx=(offset.vx*4+(Math.random()-0.5)*4);
-    p.vy=(offset.vy*4+(Math.random()-0.5)*4);
-    p.size=3+Math.random()*3;
-    p.life=8+Math.random()*6;
+    p.reset(x,y,colors[Math.floor(Math.random()*colors.length)],5,true,8);
+    p.vx=(offset.vx*5+(Math.random()-0.5)*5);
+    p.vy=(offset.vy*5+(Math.random()-0.5)*5);
+    p.size=4+Math.random()*4;
+    p.life=10+Math.random()*8;
     p.maxLife=p.life;
-    p.draw=function(){
-      ctx.save();
-      ctx.globalAlpha=Math.max(0,this.life/this.maxLife);
-      ctx.fillStyle=this.col;
-      ctx.shadowColor=this.col;
-      ctx.shadowBlur=12;
-      ctx.beginPath();
-      ctx.arc(this.x,this.y,this.size*(this.life/this.maxLife+0.5),0,Math.PI*2);
-      ctx.fill();
-      ctx.restore();
-    };
+    particles.push(p);
+  }
+  // Extra spark particles for flashier effect
+  for(let i=0;i<8;i++){
+    const p=getParticle();
+    p.reset(x,y,'#fff',8,true,5);
+    p.vx=(offset.vx*8+(Math.random()-0.5)*6);
+    p.vy=(offset.vy*8+(Math.random()-0.5)*6);
+    p.size=2+Math.random()*2;
+    p.life=5+Math.random()*4;
+    p.maxLife=p.life;
     particles.push(p);
   }
 }
@@ -1529,11 +1530,11 @@ class Explosion{
 }
 
 class Particle{
-  constructor(x,y,col,speed=6){
+  constructor(x,y,col,speed=6,glow=false,trailLen=0){
     this.active=false; // R71: pool tracking
-    this.reset(x,y,col,speed);
+    this.reset(x,y,col,speed,glow,trailLen);
   }
-  reset(x,y,col,speed=6){
+  reset(x,y,col,speed=6,glow=false,trailLen=0){
     this.x=x;this.y=y;this.col=col;
     this.vx=(Math.random()-0.5)*speed;
     this.vy=(Math.random()-0.5)*speed;
@@ -1541,8 +1542,16 @@ class Particle{
     this.maxLife=this.life;
     this.alive=true;this.active=true;
     this.size=Math.random()*3+1;
+    this.glow=glow;
+    this.trail=[];
+    this.trailLength=trailLen;
   }
   update(){
+    // Store trail position before moving
+    if(this.trailLength>0){
+      this.trail.unshift({x:this.x,y:this.y,life:this.life});
+      if(this.trail.length>this.trailLength)this.trail.pop();
+    }
     this.x+=this.vx;this.y+=this.vy;
     this.vx*=0.92;this.vy*=0.92;
     this.life-=0.8;
@@ -1550,10 +1559,31 @@ class Particle{
   }
   draw(){
     ctx.save();
-    ctx.globalAlpha=Math.max(0,this.life/this.maxLife);
+    const lifeRatio=Math.max(0,this.life/this.maxLife);
+    // Draw trail
+    if(this.trail.length>0){
+      for(let i=0;i<this.trail.length;i++){
+        const t=this.trail[i];
+        const trailLife=t.life/this.maxLife;
+        const alpha=lifeRatio*trailLife*0.5*(1-i/this.trail.length);
+        if(alpha<=0)continue;
+        ctx.globalAlpha=alpha;
+        ctx.fillStyle=this.col;
+        const ts=this.size*trailLife*0.8;
+        ctx.fillRect(Math.floor(t.x),Math.floor(t.y),ts,ts);
+      }
+    }
+    ctx.globalAlpha=lifeRatio;
     ctx.fillStyle=this.col;
-    const s=Math.floor(this.size*(this.life/this.maxLife)+1);
-    ctx.fillRect(Math.floor(this.x),Math.floor(this.y),s,s);
+    // R132: Enhanced particles with glow and trails
+    if(this.glow){
+      ctx.shadowColor=this.col;
+      ctx.shadowBlur=15*lifeRatio;
+    }
+    const s=Math.floor(this.size*lifeRatio+1);
+    ctx.beginPath();
+    ctx.arc(Math.floor(this.x),Math.floor(this.y),s*0.7,s,0,Math.PI*2);
+    ctx.fill();
     ctx.restore();
   }
 }
@@ -2201,21 +2231,36 @@ function createExplosion(x,y,big=false){
   e.reset(x,y,big);
   explosions.push(e);
   // R116: Limit particle count for performance
+  // R132: Enhanced explosion particles with glow and trails
   const remainingSlots=MAX_PARTICLES-particles.length;
   if(remainingSlots<=0)return;
   const particleCount=Math.min(big?40:15,remainingSlots);
   for(let i=0;i<particleCount;i++){
     const col=C.exp[Math.floor(Math.random()*5)];
     const p=getParticle();
-    p.reset(x,y,col,big?10:6);
+    p.reset(x,y,col,big?10:6,true,big?10:6);
     particles.push(p);
   }
-  // Add white flash particles - capped
+  // Add white flash particles - capped with glow
   const flashCount=Math.min(big?15:5,remainingSlots-particleCount);
   for(let i=0;i<flashCount;i++){
     const p=getParticle();
-    p.reset(x,y,'#fff',big?6:3);
+    p.reset(x,y,'#fff',big?6:3,true,4);
     particles.push(p);
+  }
+  // R132: Add ember particles with longer trails for big explosions
+  if(big){
+    const emberCount=Math.min(20,remainingSlots-particleCount-flashCount);
+    for(let i=0;i<emberCount;i++){
+      const p=getParticle();
+      p.reset(x,y,'#f80',4+Math.random()*3,true,15);
+      p.vx=(Math.random()-0.5)*8;
+      p.vy=(Math.random()-0.5)*8-2;
+      p.size=2+Math.random()*3;
+      p.life=30+Math.random()*20;
+      p.maxLife=p.life;
+      particles.push(p);
+    }
   }
   if(big){
     screenShake=15;
