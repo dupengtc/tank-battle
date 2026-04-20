@@ -134,15 +134,7 @@ const PARTICLE_POOL_SIZE=500;
 const EXPLOSION_POOL_SIZE=50;
 let bulletPool=[],particlePool=[],explosionPool=[];
 
-// Pre-populate pools
-function initObjectPools(){
-  for(let i=0;i<BULLET_POOL_SIZE;i++)bulletPool.push(new Bullet(0,0,0,false));
-  for(let i=0;i<PARTICLE_POOL_SIZE;i++)particlePool.push(new Particle(0,0,'#fff',0));
-  for(let i=0;i<EXPLOSION_POOL_SIZE;i++)explosionPool.push(new Explosion(0,0,false));
-}
 // R71+R72: Pool and cache init moved to after class definitions (see below)
-
-// Get object from pool
 function getBullet(){
   for(const b of bulletPool)if(!b.active)return b;
   // Pool exhausted - create new (will be GC'd less often)
@@ -501,6 +493,9 @@ let scale=1;
 function resizeGame(){
   const wrap=document.getElementById('wrap');
   if(!wrap)return;
+  // R121: Update canvas pixel resolution to match scaled game world
+  canvas.width=GW;
+  canvas.height=GH*TS;
   const screenW=window.innerWidth;
   const screenH=window.innerHeight;
   const gameW=800;
@@ -1839,6 +1834,11 @@ class PowerUp{
 }
 
 // R71: Initialize pools after all classes are defined
+function initObjectPools(){
+  for(let i=0;i<BULLET_POOL_SIZE;i++)bulletPool.push(new Bullet(0,0,0,false));
+  for(let i=0;i<PARTICLE_POOL_SIZE;i++)particlePool.push(new Particle(0,0,'#fff',0));
+  for(let i=0;i<EXPLOSION_POOL_SIZE;i++)explosionPool.push(new Explosion(0,0,false));
+}
 initObjectPools();
 initTerrainCache();
 
