@@ -964,10 +964,10 @@ class Tank{
     // R83: Weapon system
     this.weaponType=0; // 0=normal,1=shotgun,2=laser,3=missile
     this.weaponNames=['Normal','Shotgun','Laser','Missile'];
-    // Movement physics - acceleration and inertia
+    // R104: Movement physics - more responsive for players
     this.vx=0;this.vy=0;
-    this.acceleration=isPlayer?0.4:0.3;
-    this.friction=0.85;
+    this.acceleration=isPlayer?0.6:0.4;
+    this.friction=0.88;
     this.maxSpeed=this.speed;
     // Enemy aggro system
     this.aggroTarget=null;
@@ -1001,6 +1001,10 @@ class Tank{
       else if(this.dir===2){bx=this.cx-2;by=this.y+TS}
       else{bx=this.x-6;by=this.cy-2}
       playShoot(big);
+      // R104: Shooting recoil - slight screen shake
+      if(this.isPlayer||this.isPlayer2){
+        screenShake=Math.max(screenShake,2);
+      }
       spawnMuzzleFlash(bx,by,this.dir);
       const nb=getBullet();
       nb.reset(bx,by,this.dir,this.isPlayer,big,this.isPlayer2);
