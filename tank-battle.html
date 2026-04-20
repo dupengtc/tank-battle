@@ -2271,6 +2271,17 @@ function spawnEnemy(){
     boss.h=TS*1.5;
     boss.aiDir=2;
     boss.spawnTimer=30; // R102: Boss has longer spawn flicker
+    // R136: Boss spawn visual feedback - bigger arrival effect
+    for(let i=0;i<20;i++){
+      const p=getParticle();
+      p.reset(boss.cx,boss.cy,'#f0f',6+Math.random()*4,true,12);
+      p.vx=(Math.random()-0.5)*8;
+      p.vy=(Math.random()-0.5)*8;
+      p.size=4+Math.random()*4;
+      p.life=20+Math.random()*15;
+      p.maxLife=p.life;
+      particles.push(p);
+    }
     enemies.push(boss);
     screenShake=15;
     flashTimer=15;
@@ -3495,6 +3506,17 @@ function update(){
             killCount++;
             // 坦克裂解动画
             tankDebris.push(new TankDebris(e.x+TS/2,e.y+TS/2,e.dir,e.tankColor));
+            // R136: Enemy death particles
+            for(let i=0;i<8;i++){
+              const p=getParticle();
+              p.reset(e.cx,e.cy,e.tankColor,5+Math.random()*3,true,10);
+              p.vx=(Math.random()-0.5)*8;
+              p.vy=(Math.random()-0.5)*8;
+              p.size=3+Math.random()*4;
+              p.life=20+Math.random()*10;
+              p.maxLife=p.life;
+              particles.push(p);
+            }
             // 连击系统
             comboCount++;
             comboTimer=180;
