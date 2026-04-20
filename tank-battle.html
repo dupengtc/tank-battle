@@ -2677,7 +2677,8 @@ function startGame(twoPlayer=false){
     player2=null;
   }
 
-  totalEnemies=5+wave*2;
+  // R113: Beginner-friendly enemy count - wave 1 has only 2 enemies
+  totalEnemies=wave===1?2:(wave<=3?3+wave:5+wave*2);
   enemiesLeft=totalEnemies;
   spawnQueue=[];
   for(let i=0;i<Math.min(4,totalEnemies);i++){
@@ -2718,7 +2719,8 @@ function nextWave(){
   }
 
   shieldTimer=0;rapidTimer=0;bigBulletTimer=0;
-  totalEnemies=5+wave*2;
+  // R113: Beginner-friendly enemy count - wave 1 has only 2 enemies
+  totalEnemies=wave===1?2:(wave<=3?3+wave:5+wave*2);
   enemiesLeft=totalEnemies;
   spawnQueue=[];
   // Wave transition countdown - 3 seconds before enemies start spawning
