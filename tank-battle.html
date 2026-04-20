@@ -3205,7 +3205,11 @@ function update(){
   // Bullet collisions
   for(const b of bullets){
     if(checkBulletCollision(b)){b.alive=false;continue;}
-    if(checkBaseHit(b)){b.alive=false;playHit();createExplosion(b.x,b.y,true);base.hp--;updateHUD();if(base.hp<=0){base.alive=false;playExplode(true);createExplosion(base.x+TS,base.y+TS,true);gameOver(false);return;}}
+    if(checkBaseHit(b)){b.alive=false;playHit();createExplosion(b.x,b.y,true);base.hp--;updateHUD();
+      // R106: Base damage warning - red edge flash
+      flashTimer=15;flashColor='rgba(255,50,0,0.5)';screenShake=10;
+      if(base.hp<=0){base.alive=false;playExplode(true);createExplosion(base.x+TS,base.y+TS,true);gameOver(false);return;}
+    }
 
     // Player bullets hit enemies
     if(b.isPlayer||b.isPlayer2){
