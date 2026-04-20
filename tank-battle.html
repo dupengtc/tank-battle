@@ -1244,6 +1244,9 @@ class Tank{
       ctx.globalAlpha=0.7;
     }
     ctx.translate(x+TS/2,y+TS/2);
+    // R105: Size scale for enemy type variation
+    const sizeMult=this.sizeScale||1;
+    ctx.scale(sizeMult,sizeMult);
     ctx.rotate(this.dir*Math.PI/2);
     ctx.translate(-TS/2,-TS/2);
 
@@ -2105,6 +2108,8 @@ function spawnEnemy(){
   enemy.spawnTimer=20; // R102: Spawn flicker effect - 0.33s of flickering
   enemy.formation=formation; // R81: track formation
   let baseSpeed=Math.min(speeds[type]*difficultyModifier,3.5);
+  // R105: Size variation by type - heavy tanks bigger, scouts smaller
+  enemy.sizeScale=type===2?1.15:(type===0?0.9:1.0);
   // Rage mode: 50% speed boost
   if(waveRageMode)baseSpeed*=1.5;
   enemy.speed=baseSpeed;
