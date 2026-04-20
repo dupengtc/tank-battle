@@ -2025,8 +2025,12 @@ class PowerUp{
     }else{
       // R140: Ambient glow on powerups - pulsing aura effect
       const time=Date.now(),glowPulse=0.7+0.3*Math.sin(time/150+this.bobOffset),glowColor=C.pu[this.type]||'#fff';
-      ctx.globalAlpha=0.15*glowPulse;ctx.fillStyle=glowColor;ctx.shadowColor=glowColor;ctx.shadowBlur=25*glowPulse;
+      // R150: Final polish - rotating glow ring
+      ctx.globalAlpha=0.12*glowPulse;ctx.fillStyle=glowColor;ctx.shadowColor=glowColor;ctx.shadowBlur=25*glowPulse;
       ctx.beginPath();ctx.arc(this.x+TS/2,this.y+TS/2,TS*0.8,0,Math.PI*2);ctx.fill();
+      // R150: Rotating dashed ring
+      ctx.globalAlpha=0.2*glowPulse;ctx.strokeStyle=glowColor;ctx.lineWidth=2;ctx.setLineDash([4,4]);ctx.lineDashOffset=time/30;
+      ctx.beginPath();ctx.arc(this.x+TS/2,this.y+TS/2,TS*1.0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
       ctx.globalAlpha=0.1*glowPulse;ctx.shadowBlur=40*glowPulse;
       ctx.beginPath();ctx.arc(this.x+TS/2,this.y+TS/2,TS*1.2,0,Math.PI*2);ctx.fill();
       const pulse=0.85+0.15*Math.sin(Date.now()/120+this.bobOffset);
@@ -2041,7 +2045,17 @@ class PowerUp{
       ctx.fillStyle='rgba(255,255,255,0.5)';
       ctx.fillRect(-TS/2+4,-TS/2+4,TS-8,TS-8);
       ctx.fillStyle='#fff';
-      ctx.font='bold 12px Arial'; // R107: Larger icon font, R118: size reduced for label
+      ctx.font='bold 12px Arial';
+      // R150: Sparkle effect - small white dots around powerup
+      ctx.globalAlpha=0.8*glowPulse;
+      for(let s=0;s<4;s++){
+        const angle=(time/200+s*Math.PI/2)%(Math.PI*2);
+        const dist=TS*0.6+Math.sin(time/100+s)*3;
+        const sx=this.x+TS/2+Math.cos(angle)*dist;
+        const sy=this.y+TS/2+Math.sin(angle)*dist;
+        ctx.fillStyle='#fff';ctx.shadowColor='#fff';ctx.shadowBlur=4;
+        ctx.beginPath();ctx.arc(sx,sy,1.5,0,Math.PI*2);ctx.fill();
+      }
       ctx.textAlign='center';ctx.textBaseline='middle';
       const icons={life:'♥',rapid:'⚡',big:'●',shield:'🛡',star:'★',grenade:'💣',mine:'💥',frozen:'❄',repair:'🔧',invis:'👻',megaShield:'🛡️','2xScore':'✖️2'};
       const labels={life:'HP',rapid:'RP',big:'BG',shield:'SH',star:'ST',grenade:'GR',mine:'BM',frozen:'FR',repair:'RP',invis:'IN',megaShield:'MS','2xScore':'2X'};
