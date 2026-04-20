@@ -1719,19 +1719,27 @@ class Particle{
   }
 }
 
-// Floating damage number class
+// Floating damage number class with smooth animation curves - R144
 class DamageNumber{
   constructor(x,y,damage,isCombo=false){
     this.x=x;this.y=y;this.damage=damage;this.isCombo=isCombo;
-    this.vy=-2;
-    this.life=40;
-    this.maxLife=40;
-    this.alive=true;
+    this.vy=-2;this.vx=(Math.random()-0.5)*0.5;
+    this.life=40;this.maxLife=40;this.alive=true;
     this.scale=isCombo?1.5:1;
+    this.targetScale=this.scale;this.scale=0.3; // R144: Pop-in animation
+    this.rot=0;this.rotSpeed=(Math.random()-0.5)*0.1;
+    this.bounceTime=0;this.bounceCount=0;
   }
   update(){
-    this.y+=this.vy;
-    this.vy+=0.05;
+    // R144: Spring animation for scale - overshoot then settle
+    const scaleDiff=this.targetScale-this.scale;
+    this.scale+=scaleDiff*0.15;
+    this.y+=this.vy;this.vy+=0.05;this.vx*=0.98;
+    this.x+=this.vx;this.rot+=this.rotSpeed;
+    // R144: Bounce effect when rising slows
+    if(this.vy>0&&this.vy<0.5&&this.bounceCount<2){
+      this.vy=-this.vy*0.4;this.bounceCount++;
+    }
     this.life--;
     if(this.life<=0)this.alive=false;
   }
@@ -1739,16 +1747,13 @@ class DamageNumber{
     const alpha=Math.min(1,this.life/20);
     ctx.save();
     ctx.globalAlpha=alpha;
-    ctx.font=`bold ${Math.floor(14*this.scale)}px Courier New`;
-    ctx.textAlign='center';
-    ctx.textBaseline='middle';
+    ctx.translate(this.x,this.y);ctx.rotate(this.rot);ctx.scale(this.scale,this.scale);
+    ctx.font=`bold ${Math.floor(14)}px Courier New`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
     const color=this.isCombo?'#ff0':'#fff';
-    ctx.fillStyle='#000';
-    ctx.fillText(this.damage,this.x+1,this.y+1);
-    ctx.fillStyle=color;
-    ctx.shadowColor=color;
-    ctx.shadowBlur=8;
-    ctx.fillText(this.damage,this.x,this.y);
+    ctx.fillStyle='#000';ctx.fillText(this.damage,1,1);
+    ctx.fillStyle=color;ctx.shadowColor=color;ctx.shadowBlur=12;
+    ctx.fillText(this.damage,0,0);
     ctx.restore();
   }
 }
