@@ -1205,6 +1205,12 @@ class Tank{
     if(!this.alive)return;
     const x=Math.floor(this.x),y=Math.floor(this.y);
     ctx.save();
+    // R102: Spawn flicker effect - enemy flickers when spawning
+    if(this.spawnTimer>0&&!this.isPlayer&&!this.isPlayer2){
+      if(Math.floor(this.spawnTimer/3)%2===0){
+        ctx.globalAlpha=0.3;
+      }
+    }
     // Invincibility flash - 5秒无敌时半透明闪烁
     if(this.invincible>0){
       const flashPhase=Math.floor(this.invincible/8)%2;
@@ -2065,6 +2071,7 @@ function spawnEnemy(){
     boss.w=TS*1.5; // Larger size
     boss.h=TS*1.5;
     boss.aiDir=2;
+    boss.spawnTimer=30; // R102: Boss has longer spawn flicker
     enemies.push(boss);
     screenShake=15;
     flashTimer=15;
@@ -2091,6 +2098,7 @@ function spawnEnemy(){
   const sx=getFormationPos(enemies.length)*TS;
   const enemy=new Tank(sx,-TS,2,false);
   enemy.type=type;
+  enemy.spawnTimer=20; // R102: Spawn flicker effect - 0.33s of flickering
   enemy.formation=formation; // R81: track formation
   let baseSpeed=Math.min(speeds[type]*difficultyModifier,3.5);
   // Rage mode: 50% speed boost
@@ -3166,6 +3174,8 @@ function update(){
 
   // Enemy AI (affected by frozen timer)
   enemies.forEach(e=>{
+    // R102: Decrement spawn flicker timer
+    if(e.spawnTimer>0)e.spawnTimer--;
     if(frozenTimer>0){
       // Slow down frozen enemies
       const originalSpeed=e.speed;
