@@ -1583,26 +1583,26 @@ class Explosion{
     ctx.save();
     const cx=Math.floor(this.x),cy=Math.floor(this.y);
 
-    // Core explosion
+    // R143: Core explosion with bloom glow
     const r=this.big?TS*p*1.8:TS*p*1.2;
     const ci=Math.min(4,Math.floor(p*5));
     ctx.globalAlpha=1-p;
     ctx.fillStyle=C.exp[ci];
+    if(this.big){ctx.shadowColor='#ff0';ctx.shadowBlur=30*(1-p);}
     ctx.beginPath();
     ctx.arc(cx,cy,r,0,Math.PI*2);
     ctx.fill();
+    if(p<0.3){ctx.globalAlpha=(0.3-p)/0.3*0.8;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(cx,cy,r*0.4,0,Math.PI*2);ctx.fill();}
 
-    // Outer ring for big explosions
+    // R143: Outer ring with enhanced glow
     if(this.big){
       ctx.globalAlpha=(1-p)*0.5;
       ctx.fillStyle=C.exp[Math.min(4,ci+1)];
+      ctx.shadowColor=C.exp[ci];ctx.shadowBlur=15*(1-p);
       ctx.beginPath();
       ctx.arc(cx+Math.cos(Date.now()/50)*3,cy+Math.sin(Date.now()/50)*3,r*0.7,0,Math.PI*2);
       ctx.fill();
-      // R109: Shockwave ring effect
-      ctx.globalAlpha=(1-p)*0.3;
-      ctx.strokeStyle='#fff';
-      ctx.lineWidth=2;
+      ctx.globalAlpha=(1-p)*0.4;ctx.strokeStyle='#fff';ctx.lineWidth=3*(1-p)+1;ctx.shadowColor='#fff';ctx.shadowBlur=20*(1-p);
       ctx.beginPath();
       ctx.arc(cx,cy,r*1.5*(1+p),0,Math.PI*2);
       ctx.stroke();
@@ -2311,6 +2311,18 @@ function spawnEnemy(){
   enemy.maxHp=enemy.hp;
   enemy.tankColor=colors[type];
   enemy.aiDir=2;
+  // R136: Enemy spawn visual feedback - arrival particles
+  const spawnX=sx+TS/2,spawnY=-TS/2;
+  for(let i=0;i<12;i++){
+    const p=getParticle();
+    p.reset(spawnX,spawnY,'#f80',4+Math.random()*3,true,8);
+    p.vx=(Math.random()-0.5)*6;
+    p.vy=3+Math.random()*4;
+    p.size=3+Math.random()*3;
+    p.life=15+Math.random()*10;
+    p.maxLife=p.life;
+    particles.push(p);
+  }
   enemies.push(enemy);
 }
 
