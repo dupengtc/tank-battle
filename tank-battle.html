@@ -239,6 +239,12 @@ function renderTerrainToCache(){
         tc.fillStyle='#556';
         tc.fillRect(px+TS2/2-1,py,1,TS2);
         tc.fillRect(px,py+TS2/2-1,TS2,1);
+        // R135: Rivet details on steel
+        tc.fillStyle='#778';
+        tc.fillRect(px+4,py+4,2,2);
+        tc.fillRect(px+TS2-6,py+4,2,2);
+        tc.fillRect(px+4,py+TS2-6,2,2);
+        tc.fillRect(px+TS2-6,py+TS2-6,2,2);
       }
       if(forests[y]&&forests[y][x]>0){
         tc.fillStyle=C.grass;
@@ -257,6 +263,13 @@ function renderTerrainToCache(){
           tc.fill();
           tc.fillStyle=C.forest;
         }
+        // R135: Add grass tufts between trees
+        if(x%2===0){
+          tc.fillStyle='#5a3';
+          for(let g=0;g<3;g++){
+            tc.fillRect(px+3+g*7,py+TS2-2,1,2);
+          }
+        }
       }
       if(muds[y]&&muds[y][x]>0){
         tc.fillStyle=C.mud;
@@ -264,12 +277,23 @@ function renderTerrainToCache(){
         tc.fillStyle=C.mudDark;
         tc.fillRect(px+3,py+3,TS2-6,TS2-6);
         tc.fillRect(px+6,py+6,TS2-12,TS2-12);
+        // R135: Add puddle details
+        if((x+y)%2===0){
+          tc.fillStyle='rgba(60,40,20,0.5)';
+          tc.beginPath();
+          tc.arc(px+TS2/2,py+TS2/2,3,0,Math.PI*2);
+          tc.fill();
+        }
       }
       if(ices[y]&&ices[y][x]>0){
         tc.fillStyle=C.ice;
         tc.fillRect(px,py,TS2,TS2);
         tc.fillStyle=C.iceDark;
         tc.fillRect(px+2,py,TS2-4,TS2);
+        // R135: Add ice crystal sparkle
+        tc.fillStyle='rgba(255,255,255,0.6)';
+        tc.fillRect(px+6,py+6,2,2);
+        tc.fillRect(px+TS2-10,py+10,2,2);
       }
       if(cliffs[y]&&cliffs[y][x]>0){
         tc.fillStyle=C.cliff;
@@ -279,12 +303,25 @@ function renderTerrainToCache(){
         tc.strokeStyle='#000';
         tc.lineWidth=2;
         tc.strokeRect(px+1,py+1,TS2-2,TS2-2);
+        // R135: Add rock texture
+        tc.fillStyle='rgba(0,0,0,0.1)';
+        tc.fillRect(px+8,py+8,4,4);
+        tc.fillRect(px+TS2-12,py+TS2-12,3,3);
       }
       if(bridges[y]&&bridges[y][x]>0){
         tc.fillStyle=C.bridge;
         tc.fillRect(px,py,TS2,TS2);
         tc.fillStyle=C.bridgeDark;
         tc.fillRect(px+2,py+2,TS2-4,TS2-4);
+        // R135: Add plank lines
+        tc.strokeStyle='#654';
+        tc.lineWidth=1;
+        for(let p=0;p<4;p++){
+          tc.beginPath();
+          tc.moveTo(px,py+3+p*6);
+          tc.lineTo(px+TS2,py+3+p*6);
+          tc.stroke();
+        }
       }
     }
   }
