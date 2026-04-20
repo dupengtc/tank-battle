@@ -1545,45 +1545,61 @@ class Particle{
     this.glow=glow;
     this.trail=[];
     this.trailLength=trailLen;
+    // R142: Rotation and dynamic physics
+    this.rot=Math.random()*Math.PI*2;
+    this.rotSpeed=(Math.random()-0.5)*0.3;
+    this.bounce=Math.random()<0.25;
+    this.friction=0.92+Math.random()*0.06;
   }
   update(){
-    // Store trail position before moving
     if(this.trailLength>0){
       this.trail.unshift({x:this.x,y:this.y,life:this.life});
       if(this.trail.length>this.trailLength)this.trail.pop();
     }
     this.x+=this.vx;this.y+=this.vy;
-    this.vx*=0.92;this.vy*=0.92;
+    if(this.bounce){
+      if(this.x<0||this.x>GW){this.vx*=-0.5;this.x=Math.max(0,Math.min(GW,this.x));}
+      if(this.y<HUD_H||this.y>H){this.vy*=-0.5;this.y=Math.max(HUD_H,Math.min(H,this.y));}
+    }
+    this.vx*=this.friction;this.vy*=this.friction;
+    this.rot+=this.rotSpeed;
     this.life-=0.8;
     if(this.life<=0){this.alive=false;this.active=false;}
   }
   draw(){
     ctx.save();
     const lifeRatio=Math.max(0,this.life/this.maxLife);
-    // Draw trail
+    // R142: Draw trail with gradient circular fade
     if(this.trail.length>0){
       for(let i=0;i<this.trail.length;i++){
         const t=this.trail[i];
         const trailLife=t.life/this.maxLife;
-        const alpha=lifeRatio*trailLife*0.5*(1-i/this.trail.length);
+        const alpha=lifeRatio*trailLife*0.6*(1-i/this.trail.length);
         if(alpha<=0)continue;
         ctx.globalAlpha=alpha;
         ctx.fillStyle=this.col;
-        const ts=this.size*trailLife*0.8;
-        ctx.fillRect(Math.floor(t.x),Math.floor(t.y),ts,ts);
+        const ts=this.size*trailLife*(0.5+i/this.trail.length*0.5);
+        ctx.beginPath();
+        ctx.arc(t.x+this.size/2,t.y+this.size/2,ts*0.8,0,Math.PI*2);
+        ctx.fill();
       }
     }
     ctx.globalAlpha=lifeRatio;
     ctx.fillStyle=this.col;
-    // R132: Enhanced particles with glow and trails
     if(this.glow){
       ctx.shadowColor=this.col;
       ctx.shadowBlur=15*lifeRatio;
     }
     const s=Math.floor(this.size*lifeRatio+1);
-    ctx.beginPath();
-    ctx.arc(Math.floor(this.x),Math.floor(this.y),s*0.7,s,0,Math.PI*2);
-    ctx.fill();
+    // R142: Rotated square with bright core
+    ctx.translate(Math.floor(this.x)+s/2,Math.floor(this.y)+s/2);
+    ctx.rotate(this.rot);
+    ctx.fillRect(-s/2,-s/2,s,s);
+    if(this.size>2.5){
+      ctx.globalAlpha=lifeRatio*0.7;
+      ctx.fillStyle='#fff';
+      ctx.fillRect(-s/3,-s/3,s*0.66,s*0.66);
+    }
     ctx.restore();
   }
 }
