@@ -2502,14 +2502,23 @@ function createExplosion(x,y,big=false){
       particles.push(p);
     }
   }
-  // R144: Enhanced screen shake with intensity layers based on explosion size
+  // R147: Add combat flash ring effect for big explosions
   if(big){
-    screenShake=15;screenShakeIntensity=2;
-    flashTimer=8;
-    flashColor='rgba(255,200,100,0.3)';
+    flashTimer=12;flashColor='rgba(255,200,100,0.4)';
+    // R147: Combat ring shockwave
+    const ring=enemies.length>0?Math.min(5,enemies.length):3;
+    for(let i=0;i<ring;i++){
+      const angle=(i/ring)*Math.PI*2;
+      const rx=x+Math.cos(angle)*20,ry=y+Math.sin(angle)*20;
+      const p=getParticle();
+      p.reset(rx,ry,'#ff0',8,false,6);
+      p.vx=Math.cos(angle)*3;p.vy=Math.sin(angle)*3;
+      particles.push(p);
+    }
   }else{
-    screenShake=Math.max(screenShake,4);screenShakeIntensity=1;
+    flashTimer=Math.max(flashTimer,4);
   }
+  // R144: Enhanced screen shake with intensity layers based on explosion size
 }
 
 function checkBulletCollision(b){
