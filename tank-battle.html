@@ -1295,16 +1295,17 @@ class Tank{
     const so=shadowOffsets[this.dir]||{x:3,y:3};
     ctx.fillRect(so.x,so.y,TS-2,TS-2);
 
-    // Tank glow effect for players
+    // Tank glow effect for players - R133: Enhanced dynamic glow
+    const time=Date.now(),pulse=Math.sin(time/200)*4;
     if(this.isPlayer||this.isPlayer2){
       ctx.shadowColor=this.isPlayer?'#4a4':'#44d';
-      ctx.shadowBlur=8;
+      ctx.shadowBlur=10+pulse;
     }else if(this.isBoss){
       ctx.shadowColor='#f0f';
-      ctx.shadowBlur=20;
+      ctx.shadowBlur=18+Math.sin(time/150)*8;
     }else{
       ctx.shadowColor=this.tankColor;
-      ctx.shadowBlur=4;
+      ctx.shadowBlur=5+Math.sin(time/300)*2;
     }
 
     let col=this.tankColor;
