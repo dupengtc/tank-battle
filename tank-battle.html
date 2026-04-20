@@ -2016,9 +2016,17 @@ class PowerUp{
       ctx.scale(scale,scale);
       ctx.fillStyle=C.pu[this.type]||'#fff';
       ctx.shadowColor=C.pu[this.type]||'#fff';
+      ctx.fillStyle=C.pu[this.type]||'#fff';
+      ctx.shadowColor=C.pu[this.type]||'#fff';
       ctx.shadowBlur=20;
       ctx.fillRect(-TS/2+2,-TS/2+2,TS-4,TS-4);
     }else{
+      // R140: Ambient glow on powerups - pulsing aura effect
+      const time=Date.now(),glowPulse=0.7+0.3*Math.sin(time/150+this.bobOffset),glowColor=C.pu[this.type]||'#fff';
+      ctx.globalAlpha=0.15*glowPulse;ctx.fillStyle=glowColor;ctx.shadowColor=glowColor;ctx.shadowBlur=25*glowPulse;
+      ctx.beginPath();ctx.arc(this.x+TS/2,this.y+TS/2,TS*0.8,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=0.1*glowPulse;ctx.shadowBlur=40*glowPulse;
+      ctx.beginPath();ctx.arc(this.x+TS/2,this.y+TS/2,TS*1.2,0,Math.PI*2);ctx.fill();
       const pulse=0.85+0.15*Math.sin(Date.now()/120+this.bobOffset);
       const blink=this.timer%60<50?1:(0.3+0.7*Math.abs(Math.sin(this.timer/5)));
       ctx.globalAlpha=0.6*blink;
