@@ -2984,37 +2984,46 @@ function draw(){
   damageNumbers.forEach(d=>d.draw());
   tireTrails.forEach(t=>t.draw());
 
-  // R80: Wave transition countdown display with enhanced effects
+  // R108: Wave transition countdown display with enhanced effects
   if(waveTransitionTimer>0){
     ctx.save();
     // R80: Fade effect
     const fadeAlpha=Math.min(1,waveTransitionTimer/30)*0.7;
     ctx.fillStyle=`rgba(0,0,0,${fadeAlpha})`;
     ctx.fillRect(0,0,GW,H);
-    // Pulsing glow box
+    // Pulsing glow box - larger for R108
     const pulse=0.7+0.3*Math.abs(Math.sin(Date.now()/100));
     ctx.strokeStyle=`rgba(255,${Math.floor(200*pulse)},0,${pulse})`;
     ctx.lineWidth=3;
     ctx.fillStyle='rgba(0,0,0,0.6)';
-    ctx.fillRect(GW/2-140,H/2-70,280,100);
-    ctx.strokeRect(GW/2-140,H/2-70,280,100);
+    ctx.fillRect(GW/2-160,H/2-80,320,120);
+    ctx.strokeRect(GW/2-160,H/2-80,320,120);
     ctx.fillStyle='#ff0';
-    ctx.font='bold 18px Courier New';
+    ctx.font='bold 20px Courier New';
     ctx.textAlign='center';
     ctx.textBaseline='middle';
     ctx.shadowColor='#ff0';
     ctx.shadowBlur=20;
-    ctx.fillText('GET READY',GW/2,H/2-35);
-    ctx.font='bold 14px Courier New';
-    ctx.fillStyle='#aaa';
+    // R108: Show enemy count and type during countdown
+    const isBossWave=wave%5===0;
+    if(isBossWave){
+      ctx.fillText('⚠ BOSS WAVE ⚠',GW/2,H/2-45);
+    }else{
+      ctx.fillText('GET READY',GW/2,H/2-45);
+    }
+    ctx.font='bold 16px Courier New';
+    ctx.fillStyle='#0f0';
     ctx.shadowBlur=5;
-    ctx.fillText(`WAVE ${wave}`,GW/2,H/2-12);
-    ctx.font='bold 48px Courier New';
+    ctx.fillText(`WAVE ${wave}`,GW/2,H/2-22);
+    ctx.font='bold 12px Courier New';
+    ctx.fillStyle='#aaa';
+    ctx.fillText(`Enemies: ${totalEnemies}`,GW/2,H/2-5);
+    ctx.font='bold 56px Courier New';
     ctx.fillStyle='#fff';
     ctx.shadowColor='#fff';
     ctx.shadowBlur=30;
     const countNum=waveTransitionCountdown>0?waveTransitionCountdown:1;
-    ctx.fillText(countNum,GW/2,H/2+35);
+    ctx.fillText(countNum,GW/2,H/2+45);
     ctx.restore();
   }
 
