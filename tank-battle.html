@@ -323,6 +323,23 @@ function renderTerrainToCache(){
           tc.stroke();
         }
       }
+      // R145: Add subtle ground texture variation to empty tiles
+      const isEmpty=!(bricks[y]&&bricks[y][x]>0)&&!(steels[y]&&steels[y][x]>0)&&
+                    !(forests[y]&&forests[y][x]>0)&&!(muds[y]&&muds[y][x]>0)&&
+                    !(ices[y]&&ices[y][x]>0)&&!(cliffs[y]&&cliffs[y][x]>0)&&!(bridges[y]&&bridges[y][x]>0);
+      if(isEmpty&&y>0){
+        const seed=(x*7+y*13)%17;
+        if(seed<3){
+          tc.fillStyle=`rgba(${50+seed*20},${45+seed*15},${40+seed*10},0.3)`;
+          tc.beginPath();
+          tc.arc(px+TS2/2+(seed-1)*4,py+TS2/2+(seed%3)*4,1+seed%2,0,Math.PI*2);
+          tc.fill();
+        }
+        if(seed===5&&y%2===0){
+          tc.strokeStyle='rgba(0,0,0,0.08)';tc.lineWidth=1;
+          tc.beginPath();tc.moveTo(px+2,py+TS2/2);tc.lineTo(px+TS2-2,py+TS2/2);tc.stroke();
+        }
+      }
     }
   }
   terrainCacheValid=true;
@@ -941,7 +958,7 @@ function spawnDust(x,y,dir){
   const baseAngle=dirAngles[dir]+Math.PI+(Math.random()-0.5)*0.8;
   const speed=1+Math.random()*2;
   const p=getParticle();
-  p.reset(x,y,dustColors[Math.floor(Math.random()*dustColors.length)],speed);
+  p.reset(x,y,dustColors[Math.floor(Math.random()*dustColors.length)],speed,true,6);
   p.vx=Math.cos(baseAngle)*speed;
   p.vy=Math.sin(baseAngle)*speed;
   p.size=2+Math.random()*2;
@@ -1520,30 +1537,33 @@ class Bullet{
     if(this.x<0||this.x>GW||this.y<0||this.y>H-HUD_H){this.alive=false;this.active=false;}
   }
   draw(){
-    // Draw trail
+    // R129: Enhanced bullet trail with glow effect
     ctx.save();
     for(let i=0;i<this.trail.length;i++){
       const t=this.trail[i];
-      const alpha=(i+1)/this.trail.length*0.5;
+      const alpha=(i+1)/this.trail.length*0.7;
       ctx.globalAlpha=alpha;
       ctx.fillStyle=this.big?C.bulletBig:C.bullet;
+      ctx.shadowColor=this.big?'#f80':'#ff0';
+      ctx.shadowBlur=8;
+      const ts=this.big?3*(i+1)/this.trail.length:2*(i+1)/this.trail.length;
       ctx.beginPath();
-      ctx.arc(t.x,t.y,this.big?3:1.5,0,Math.PI*2);
+      ctx.arc(t.x,t.y,ts,0,Math.PI*2);
       ctx.fill();
     }
     ctx.restore();
 
-    // Draw bullet
+    // Draw bullet with enhanced glow
     ctx.save();
     ctx.fillStyle=this.big?C.bulletBig:C.bullet;
     ctx.shadowColor=this.big?'#f80':'#ff0';
-    ctx.shadowBlur=this.big?10:6;
+    ctx.shadowBlur=this.big?15:10;
     ctx.beginPath();
-    ctx.arc(this.x,this.y,this.big?4:2.5,0,Math.PI*2);
+    ctx.arc(this.x,this.y,this.big?5:3,0,Math.PI*2);
     ctx.fill();
-    ctx.fillStyle='rgba(255,255,255,0.8)';
+    ctx.fillStyle='rgba(255,255,255,0.9)';
     ctx.beginPath();
-    ctx.arc(this.x-1,this.y-1,this.big?1.5:1,0,Math.PI*2);
+    ctx.arc(this.x-1,this.y-1,this.big?2:1.2,0,Math.PI*2);
     ctx.fill();
     ctx.restore();
   }
@@ -2225,8 +2245,28 @@ function drawMap(){
   // Draw base (always dynamic) - R78: damage visual feedback
   if(base&&base.alive){
     const bx=base.x,by=base.y-HUD_H;
-    // Damage cracks overlay based on HP
+    // R138: Base shield aura effect
+    const time=Date.now();
+    const shieldPulse=Math.sin(time/200)*0.3+0.7;
     const hpRatio=base.hp/base.maxHp;
+    // Draw shield aura (outer glow)
+    if(hpRatio>0.33){
+      ctx.save();
+      ctx.globalAlpha=0.2*shieldPulse;
+      ctx.fillStyle='#0cf';
+      ctx.shadowColor='#0cf';
+      ctx.shadowBlur=20*shieldPulse;
+      ctx.beginPath();
+      ctx.arc(bx+TS,by+TS,TS*1.5,0,Math.PI*2);
+      ctx.fill();
+      ctx.globalAlpha=0.1*shieldPulse;
+      ctx.shadowBlur=40*shieldPulse;
+      ctx.beginPath();
+      ctx.arc(bx+TS,by+TS,TS*2,0,Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
+    // Damage cracks overlay based on HP
     ctx.fillStyle=hpRatio>0.66?C.base:(hpRatio>0.33?'#c80':'#a50');
     ctx.fillRect(bx,by,TS*2,TS*2);
     ctx.fillStyle=hpRatio>0.66?C.baseDark:(hpRatio>0.33?'#a60':'#830');
@@ -2243,6 +2283,17 @@ function drawMap(){
         ctx.moveTo(bx+2,by+TS);ctx.lineTo(bx+TS*2-2,by+TS);
       }
       ctx.stroke();
+    }
+    // R138: Warning flash when critically damaged
+    if(hpRatio<0.33){
+      ctx.save();
+      ctx.globalAlpha=0.3+Math.sin(time/100)*0.2;
+      ctx.strokeStyle='#f00';
+      ctx.lineWidth=3;
+      ctx.shadowColor='#f00';
+      ctx.shadowBlur=15;
+      ctx.strokeRect(bx-2,by-2,TS*2+4,TS*2+4);
+      ctx.restore();
     }
     // Smoke when critically damaged
     if(hpRatio<0.33&&Math.random()<0.1){
