@@ -48,6 +48,13 @@
 </head>
 <body>
 <div id="wrap">
+  <!-- R115: Virtual joystick for mobile -->
+  <div id="mobile-controls" style="display:none;position:absolute;bottom:10px;left:0;right:0;z-index:10;pointer-events:none">
+    <div id="move-joystick" style="position:absolute;left:20px;bottom:20px;width:100px;height:100px;background:rgba(255,255,255,0.1);border-radius:50%;border:2px solid rgba(255,255,255,0.3);pointer-events:auto">
+      <div id="joystick-knob" style="position:absolute;left:35px;top:35px;width:30px;height:30px;background:rgba(0,255,0,0.5);border-radius:50%"></div>
+    </div>
+    <div id="fire-btn" style="position:absolute;right:30px;bottom:40px;width:80px;height:80px;background:rgba(255,100,0,0.6);border-radius:50%;border:3px solid #f64;display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;font-weight:bold;pointer-events:auto">FIRE</div>
+  </div>
   <div id="hud">
     <div class="hud-item">
       <span class="hud-label">SCORE</span>
@@ -458,6 +465,36 @@ let selectedLevel=1;
 if(savedHiScore>hiScore)hiScore=savedHiScore;
 loadAchievements();
 loadCareerStats();
+
+// R115: Detect touch device and show mobile controls
+const isTouchDevice=('ontouchstart' in window)||(navigator.maxTouchPoints>0);
+if(isTouchDevice){
+  document.getElementById('mobile-controls').style.display='block';
+  // Mobile joystick handling
+  const moveJoy=document.getElementById('move-joystick');
+  const joyKnob=document.getElementById('joystick-knob');
+  let joyActive=false,joyId=null;
+  moveJoy.addEventListener('touchstart',e=>{e.preventDefault();joyActive=true;joyId=e.touches[0].identifier;updateJoy(e.touches[0]);},{passive:false});
+  moveJoy.addEventListener('touchmove',e=>{e.preventDefault();for(let t of e.touches)if(t.identifier===joyId){updateJoy(t);break;}},{passive:false});
+  moveJoy.addEventListener('touchend',e=>{e.preventDefault();joyActive=false;joyKnob.style.left='35px';joyKnob.style.top='35px';keys['ArrowUp']=false;keys['ArrowDown']=false;keys['ArrowLeft']=false;keys['ArrowRight']=false;},{passive:false});
+  function updateJoy(touch){
+    const rect=moveJoy.getBoundingClientRect();
+    const cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+    const dx=touch.clientX-cx,dy=touch.clientY-cy;
+    const dist=Math.min(30,Math.sqrt(dx*dx+dy*dy));
+    const angle=Math.atan2(dy,dx);
+    joyKnob.style.left=(35+Math.cos(angle)*dist)+'px';
+    joyKnob.style.top=(35+Math.sin(angle)*dist)+'px';
+    const thresh=10;
+    keys['ArrowUp']=dy<-thresh;
+    keys['ArrowDown']=dy>thresh;
+    keys['ArrowLeft']=dx<-thresh;
+    keys['ArrowRight']=dx>thresh;
+  }
+  // Fire button
+  const fireBtn=document.getElementById('fire-btn');
+  fireBtn.addEventListener('touchstart',e=>{e.preventDefault();if(gameState==='playing'&&player&&player.alive){const b=player.shoot();if(b){bullets.push(b);shotsFired++;}}else if(gameState==='start'||gameState==='gameover'){keys['Enter']=true;}},{passive:false});
+}
 
 // Fullscreen scaling - make game fill the entire screen
 let scale=1;
