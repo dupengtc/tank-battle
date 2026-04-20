@@ -2187,19 +2187,29 @@ function spawnPowerup(x,y){
   powerups.push(new PowerUp(x,y,type));
 }
 
+// R116: Performance limits
+const MAX_PARTICLES=200;
+const MAX_EXPLOSIONS=30;
+
 function createExplosion(x,y,big=false){
+  // R116: Limit explosions for performance
+  if(explosions.length>=MAX_EXPLOSIONS)return;
   const e=getExplosion();
   e.reset(x,y,big);
   explosions.push(e);
-  const particleCount=big?40:15;
+  // R116: Limit particle count for performance
+  const remainingSlots=MAX_PARTICLES-particles.length;
+  if(remainingSlots<=0)return;
+  const particleCount=Math.min(big?40:15,remainingSlots);
   for(let i=0;i<particleCount;i++){
     const col=C.exp[Math.floor(Math.random()*5)];
     const p=getParticle();
     p.reset(x,y,col,big?10:6);
     particles.push(p);
   }
-  // Add white flash particles
-  for(let i=0;i<(big?15:5);i++){
+  // Add white flash particles - capped
+  const flashCount=Math.min(big?15:5,remainingSlots-particleCount);
+  for(let i=0;i<flashCount;i++){
     const p=getParticle();
     p.reset(x,y,'#fff',big?6:3);
     particles.push(p);
