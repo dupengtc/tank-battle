@@ -2269,24 +2269,43 @@ function drawMap(){
   // Draw base (always dynamic) - R78: damage visual feedback
   if(base&&base.alive){
     const bx=base.x,by=base.y-HUD_H;
-    // R138: Base shield aura effect
+    // R148: Enhanced base shield aura with warning effects
     const time=Date.now();
     const shieldPulse=Math.sin(time/200)*0.3+0.7;
     const hpRatio=base.hp/base.maxHp;
-    // Draw shield aura (outer glow)
+    // R148: Multi-layered shield aura with animated warning rings
     if(hpRatio>0.33){
       ctx.save();
-      ctx.globalAlpha=0.2*shieldPulse;
+      // Inner shield glow
+      ctx.globalAlpha=0.25*shieldPulse;
       ctx.fillStyle='#0cf';
       ctx.shadowColor='#0cf';
-      ctx.shadowBlur=20*shieldPulse;
+      ctx.shadowBlur=25*shieldPulse;
       ctx.beginPath();
-      ctx.arc(bx+TS,by+TS,TS*1.5,0,Math.PI*2);
+      ctx.arc(bx+TS,by+TS,TS*1.3,0,Math.PI*2);
       ctx.fill();
-      ctx.globalAlpha=0.1*shieldPulse;
-      ctx.shadowBlur=40*shieldPulse;
+      // R148: Outer warning ring with rotation
+      ctx.globalAlpha=0.15*shieldPulse;
+      ctx.shadowBlur=45*shieldPulse;
+      ctx.strokeStyle=hpRatio<0.66?'#f80':'#0cf';
+      ctx.lineWidth=2;
+      ctx.setLineDash([8,4]);
+      ctx.lineDashOffset=-time/50;
       ctx.beginPath();
-      ctx.arc(bx+TS,by+TS,TS*2,0,Math.PI*2);
+      ctx.arc(bx+TS,by+TS,TS*1.8,0,Math.PI*2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+    // R148: Critical HP warning - pulsing red aura
+    if(hpRatio<0.33){
+      ctx.save();
+      ctx.globalAlpha=0.3+0.2*Math.sin(time/80);
+      ctx.fillStyle='rgba(255,0,0,0.3)';
+      ctx.shadowColor='#f00';
+      ctx.shadowBlur=30;
+      ctx.beginPath();
+      ctx.arc(bx+TS,by+TS,TS*2.2,0,Math.PI*2);
       ctx.fill();
       ctx.restore();
     }
