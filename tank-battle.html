@@ -1330,10 +1330,20 @@ class Tank{
     const x=Math.floor(this.x),y=Math.floor(this.y);
     ctx.save();
     // R102: Spawn flicker effect - enemy flickers when spawning
+    // R146: Enhanced spawn with digital glitch effect
     if(this.spawnTimer>0&&!this.isPlayer&&!this.isPlayer2){
       if(Math.floor(this.spawnTimer/3)%2===0){
         ctx.globalAlpha=0.3;
+      }else{
+        // R146: Glitch displacement on spawn
+        ctx.translate((Math.random()-0.5)*4,(Math.random()-0.5)*2);
       }
+    }
+    // R146: Enemy hit flash - white flash when taking damage
+    if(this.flashTimer>0){
+      ctx.globalAlpha=0.7+0.3*Math.abs(Math.sin(this.flashTimer*2));
+      ctx.fillStyle='#fff';
+      ctx.fillRect(x-2,y-2,TS+4,TS+4);
     }
     // Invincibility flash - 5秒无敌时半透明闪烁
     if(this.invincible>0){
@@ -2401,17 +2411,23 @@ function spawnEnemy(){
   enemy.tankColor=colors[type];
   enemy.aiDir=2;
   // R136: Enemy spawn visual feedback - arrival particles
+  // R146: Enhanced spawn with ring effect and multi-colored particles
   const spawnX=sx+TS/2,spawnY=-TS/2;
-  for(let i=0;i<12;i++){
+  // R146: Spawn ring expansion effect
+  const spawnColors=['#f80','#ff0','#fa0','#f40','#fff'];
+  for(let i=0;i<15;i++){
     const p=getParticle();
-    p.reset(spawnX,spawnY,'#f80',4+Math.random()*3,true,8);
-    p.vx=(Math.random()-0.5)*6;
-    p.vy=3+Math.random()*4;
+    const angle=(i/15)*Math.PI*2;
+    p.reset(spawnX,spawnY,spawnColors[i%spawnColors.length],5+Math.random()*4,true,12);
+    p.vx=Math.cos(angle)*4+(Math.random()-0.5)*4;
+    p.vy=3+Math.random()*3;
     p.size=3+Math.random()*3;
-    p.life=15+Math.random()*10;
+    p.life=18+Math.random()*12;
     p.maxLife=p.life;
     particles.push(p);
   }
+  // R146: Flash spawn effect at entry point
+  screenShake=Math.max(screenShake,3);
   enemies.push(enemy);
 }
 
