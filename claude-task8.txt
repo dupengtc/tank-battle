@@ -1,0 +1,38 @@
+# Tank Battle - Bug Fix + UX 30轮优化
+
+## 当前问题（必须先修复）
+
+### P0 - 游戏无法打开 / 定位异常
+1. **initObjectPools() 调用顺序错误**：`initObjectPools()` 在 line 1842 调用，但 Tank/Bullet/Particle 类在 lines 996-1719 定义。类声明被提升但处于临时死区，调用时会导致 ReferenceError。**必须把 line 1842-1843 的调用移到所有类定义之后。**
+
+2. **Canvas 画布尺寸未随缩放更新**：canvas.width=800, height=564 硬编码，`resizeGame()` 只更新 CSS transform，没有同步 canvas 像素分辨率。视觉上看起来偏右下角。请在 `resizeGame()` 开始时立即更新 canvas 尺寸为 GW*scale 和 GH*scale，让画布真正填满屏幕。
+
+3. **resizeGame() 时机**：当前只 `setTimeout(resizeGame,100)`，页面加载早期 canvas.offsetWidth 可能为0。应使用 `DOMContentLoaded` 或在 resizeGame 开头检查 offsetWidth 为0时延迟。
+
+### P1 - UX 问题
+4. **界面不够炫酷**：增加更多粒子效果、动态光晕、更好的动画曲线
+5. **地图太简单**：在已有8种地形基础上增加更多细节和变化
+6. **敌人没有出现**：检查敌人 spawn 逻辑是否被上述 bug 影响
+7. **没有基地保护感**：强化基地视觉，让玩家明确知道基地位置
+
+## 工作流程
+每轮执行以下步骤（必须按顺序，不能跳过）：
+1. 读取 tank-battle.html 当前代码
+2. 分析问题，制定修复方案
+3. 修改代码（每轮只改一个明确的问题）
+4. 用 validate2.js 验证语法
+5. git commit 并 push
+6. 生成 commit message 格式：`[Rnd-NN] 修复/优化内容`
+
+## 修复优先级
+- R121: 修复 initObjectPools 调用顺序 + canvas 尺寸适配全屏
+- R122-R150: 持续UX优化（炫酷粒子、全屏效果、地图丰富度、敌人体验、基地保护感等）
+
+## 验收标准
+- 打开 tank-battle.html 后立即显示游戏画面，无报错
+- 画布填满整个浏览器窗口
+- 游戏在窗口 resize 后自适应
+- 敌人正常出现并攻击
+- 基地视觉突出，可被攻击受伤
+
+开始执行！

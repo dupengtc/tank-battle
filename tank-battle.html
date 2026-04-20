@@ -1299,17 +1299,47 @@ class Tank{
     const so=shadowOffsets[this.dir]||{x:3,y:3};
     ctx.fillRect(so.x,so.y,TS-2,TS-2);
 
-    // Tank glow effect for players - R133: Enhanced dynamic glow
-    const time=Date.now(),pulse=Math.sin(time/200)*4;
+    // Tank glow effect for players - R133: Enhanced dynamic glow + R123: Dynamic glow with pulsing aura
+    const time=Date.now();
+    const pulse=Math.sin(time/200)*4;
+    // R123: Add color-shifting glow based on HP state
+    let glowColor=this.tankColor;
+    let glowIntensity=5;
     if(this.isPlayer||this.isPlayer2){
-      ctx.shadowColor=this.isPlayer?'#4a4':'#44d';
-      ctx.shadowBlur=10+pulse;
+      glowColor=this.isPlayer?'#4a4':'#44d';
+      glowIntensity=12+pulse;
+      // R123: Low HP warning glow - shift to red/orange
+      if(this.hp&&this.maxHp&&this.hp<this.maxHp*0.3){
+        glowColor='#f40';
+        glowIntensity=18+Math.sin(time/100)*6;
+        // R123: Outer warning ring
+        ctx.save();
+        ctx.globalAlpha=0.3+0.2*Math.sin(time/80);
+        ctx.strokeStyle='#f40';
+        ctx.lineWidth=2;
+        ctx.shadowColor='#f40';
+        ctx.shadowBlur=20;
+        ctx.beginPath();
+        ctx.arc(this.cx,this.cy,TS*1.3,0,Math.PI*2);
+        ctx.stroke();
+        ctx.restore();
+      }
     }else if(this.isBoss){
-      ctx.shadowColor='#f0f';
-      ctx.shadowBlur=18+Math.sin(time/150)*8;
-    }else{
-      ctx.shadowColor=this.tankColor;
-      ctx.shadowBlur=5+Math.sin(time/300)*2;
+      glowColor='#f0f';
+      glowIntensity=20+Math.sin(time/150)*10;
+    }
+    ctx.shadowColor=glowColor;
+    ctx.shadowBlur=glowIntensity;
+    // R123: Extra outer aura for players (layered glow)
+    if((this.isPlayer||this.isPlayer2)&&this.alive){
+      ctx.save();
+      ctx.globalAlpha=0.15+0.05*Math.sin(time/300);
+      ctx.shadowBlur=25;
+      ctx.fillStyle='transparent';
+      ctx.beginPath();
+      ctx.arc(this.cx,this.cy,TS*0.8,0,Math.PI*2);
+      ctx.fill();
+      ctx.restore();
     }
 
     let col=this.tankColor;

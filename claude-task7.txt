@@ -1,0 +1,89 @@
+## Tank Battle - 完成最后2轮 R118 + R120
+
+工作目录：C:\Users\Garu\.qclaw\workspace-agent-2e1ffa57\tank-battle
+
+## 背景
+R101-R119 已完成。还缺 R118（无障碍）和 R120（最终测试）。请完成这两轮。
+
+---
+
+## R118: 无障碍优化
+
+添加以下功能：
+
+1. **高对比度模式**：按 H 键切换高对比度模式
+   - document.body.classList.toggle('high-contrast')
+   - CSS中已有 body.high-contrast #c{filter:contrast(1.5)brightness(1.2)} - 确保这个生效
+   - 高对比度模式下：HUD文字变白、敌人坦克更明显、地形边界更清晰
+
+2. **色盲友好颜色方案**：确保道具颜色不只依赖颜色区分
+   - 护盾道具：蓝色 + 盾牌图标(🛡)
+   - 加速道具：黄色 + 闪电图标(⚡)
+   - 炸弹道具：红色 + 爆炸图标(💥)
+   - 星星道具：金色 + 星形图标(★)
+   - 所有道具显示文字标签（即使变小了也要有）
+
+3. **游戏内提示文字**：
+   - 开始画面显示所有操作按键
+   - 游戏过程中关键提示：道具效果、H键对比度、ESC暂停
+   - 游戏结束显示"按 ENTER 重新开始"
+
+4. **音量控制**：
+   - M 键静音/取消静音
+   - 开始界面显示"M = 静音"
+
+5. **确保HUD始终可读**：
+   - HUD背景不透明黑色
+   - 文字有 text-shadow 提高可读性
+   - 数字变化时有过渡动画
+
+完成后：node validate2.js && git add . && git commit -m "[Rnd-118] Accessibility: high-contrast mode, color-blind friendly icons, key hints" && git push
+
+---
+
+## R120: 最终集成测试与清理
+
+执行以下检查和最终优化：
+
+1. **运行测试**：node validate2.js 确保语法正确
+
+2. **代码审查 - 修复所有 console.error 和 console.warn**：
+   - 查找所有 console.log/console.warn/console.error 调用
+   - 删除所有调试用的 console.log
+   - 保留关键的 console.error（如资源加载失败）
+
+3. **检查游戏完整性**：
+   - generateMap() 是否正确生成地图（基地存在、敌人数量正确）
+   - gameLoop() 是否正确启动
+   - 敌人生成是否正常工作
+   - 碰撞检测是否正常工作
+   - 游戏结束条件是否正确触发
+
+4. **最终性能检查**：
+   - 确保粒子数量有上限（max 200）
+   - 确保敌人数量有上限（max 10）
+   - 确保子弹数量有上限（max 50）
+   - 检查是否有内存泄漏风险（对象是否正确回收）
+
+5. **更新 README.md**（如果存在）或创建简短的 README：
+   ```
+   # Tank Battle（坦克大战）
+   
+   一个类 Battle City 的 HTML5 坦克射击游戏。
+   
+   ## 操作
+   - 方向键：移动
+   - 空格：射击
+   - P：暂停
+   - M：静音
+   - H：高对比度模式
+   - ENTER：开始/重新开始
+   
+   ## 如何运行
+   直接用浏览器打开 tank-battle.html 即可。
+   ```
+
+6. **最终 commit**：
+   - git add . && git commit -m "[Rnd-120] Final: integration test, bug fixes, README" && git push
+
+完成后输出：ALL 120 ROUNDS COMPLETE - TANK BATTLE REDESIGN DONE
