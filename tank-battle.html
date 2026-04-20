@@ -475,7 +475,9 @@ function activateSkill2(){
 let puBlinkTimer=0;
 let comboCount=0,comboTimer=0,comboMultiplier=1;
 let screenShake=0,flashTimer=0,flashColor='rgba(255,255,0,0.3)';
-let slowMotionTimer=0,hitStopTimer=0;
+// R144: Smooth motion - screen shake with spring physics and intensity layers
+let screenShakeDecay=0.92,screenShakeIntensity=1,screenShakeBounce=0;
+let hitStopTimer=0;
 let frozenTimer=0; // Frozen effect - slows all enemies
 let audioCtx=null;
 let isTwoPlayer=false;
@@ -1593,8 +1595,31 @@ class Explosion{
     ctx.arc(cx,cy,r,0,Math.PI*2);
     ctx.fill();
     if(p<0.3){ctx.globalAlpha=(0.3-p)/0.3*0.8;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(cx,cy,r*0.4,0,Math.PI*2);ctx.fill();}
+    // R137: Secondary debris particles
+    if(this.big&&p<0.5){
+      ctx.globalAlpha=0.6*(1-p*2);
+      ctx.fillStyle='#f40';
+      for(let d=0;d<6;d++){
+        const angle=(d/6)*Math.PI*2+p*10;
+        const dist=r*1.2*(1-p)+d*3;
+        ctx.beginPath();
+        ctx.arc(cx+Math.cos(angle)*dist,cy+Math.sin(angle)*dist,2+Math.random()*2,0,Math.PI*2);
+        ctx.fill();
+      }
+    }
 
-    // R143: Outer ring with enhanced glow
+    // R137: Shockwave ring
+    if(this.big){
+      ctx.globalAlpha=(1-p)*0.3;
+      ctx.strokeStyle='#fff';
+      ctx.lineWidth=2;
+      ctx.shadowColor='#fff';ctx.shadowBlur=10*(1-p);
+      ctx.beginPath();
+      ctx.arc(cx,cy,r*1.5*(1+p),0,Math.PI*2);
+      ctx.stroke();
+    }
+
+    // R137: Enhanced outer ring with pulsing
     if(this.big){
       ctx.globalAlpha=(1-p)*0.5;
       ctx.fillStyle=C.exp[Math.min(4,ci+1)];
@@ -1602,13 +1627,9 @@ class Explosion{
       ctx.beginPath();
       ctx.arc(cx+Math.cos(Date.now()/50)*3,cy+Math.sin(Date.now()/50)*3,r*0.7,0,Math.PI*2);
       ctx.fill();
-      ctx.globalAlpha=(1-p)*0.4;ctx.strokeStyle='#fff';ctx.lineWidth=3*(1-p)+1;ctx.shadowColor='#fff';ctx.shadowBlur=20*(1-p);
-      ctx.beginPath();
-      ctx.arc(cx,cy,r*1.5*(1+p),0,Math.PI*2);
-      ctx.stroke();
     }
 
-    // R143: Enhanced particles with glow
+    // R137: Enhanced particles with glow
     ctx.globalAlpha=1;ctx.shadowColor='#ff0';ctx.shadowBlur=8*(1-p)+2;
     for(const part of this.particles){
       if(part.life<=0)continue;
@@ -2395,12 +2416,13 @@ function createExplosion(x,y,big=false){
       particles.push(p);
     }
   }
+  // R144: Enhanced screen shake with intensity layers based on explosion size
   if(big){
-    screenShake=15;
+    screenShake=15;screenShakeIntensity=2;
     flashTimer=8;
     flashColor='rgba(255,200,100,0.3)';
   }else{
-    screenShake=Math.max(screenShake,4);
+    screenShake=Math.max(screenShake,4);screenShakeIntensity=1;
   }
 }
 
@@ -3361,7 +3383,15 @@ function update(){
   gameTime++;
   survivalTime++;
   if(flashTimer>0)flashTimer--;
-  if(screenShake>0)screenShake*=0.85;
+  // R144: Spring physics for screen shake with bounce
+  if(screenShake>0.1){
+    screenShake*=screenShakeDecay;
+    screenShakeBounce=Math.sin(screenShake*0.5)*screenShake*0.3;
+  }else if(screenShake>0){
+    screenShake*=0.8;
+    screenShakeBounce*=0.9;
+    if(screenShake<0.1)screenShake=0;
+  }
   // R73: Build spatial hash for collision optimization
   spatialClear();
   for(const b of bullets)if(b.active)spatialInsert(b,'bullet');
@@ -3813,8 +3843,11 @@ function gameLoop(ts){
   updateMuteIndicator();
   updateWeather();
   ctx.save();
+  // R144: Multi-axis spring-based screen shake with intensity variation
   if(screenShake>0.5){
-    ctx.translate((Math.random()-0.5)*screenShake*2,(Math.random()-0.5)*screenShake*2);
+    const shakeX=(Math.random()-0.5)*screenShake*2+screenShakeBounce;
+    const shakeY=(Math.random()-0.5)*screenShake*2+screenShakeBounce;
+    ctx.translate(shakeX,shakeY);
   }
   draw();
   if(showFps){
