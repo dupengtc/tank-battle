@@ -14,7 +14,7 @@
   #scanlines{position:absolute;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.15),rgba(0,0,0,0.15) 1px,transparent 1px,transparent 2px);pointer-events:none;z-index:3;opacity:0.4}
   #vignette{position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.5) 100%);pointer-events:none;z-index:3}
   #crt-effect{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:3;mix-blend-mode:screen;opacity:0.03}
-  #hud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;padding:6px 12px;background:rgba(0,0,0,0.85);color:#0f0;font-size:13px;z-index:4;border-bottom:1px solid #333;font-family:'Courier New',monospace}
+  #hud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;padding:6px 12px;background:#000;color:#0f0;font-size:13px;z-index:4;border-bottom:1px solid #333;font-family:'Courier New',monospace}
   .hud-item{display:flex;align-items:center;gap:8px}
   .hud-label{color:#888;font-size:11px;letter-spacing:1px}
   .hud-val{color:#0f0;font-weight:bold;min-width:40px;text-shadow:0 0 6px #0f0}
@@ -1826,10 +1826,13 @@ class PowerUp{
       ctx.fillStyle='rgba(255,255,255,0.5)';
       ctx.fillRect(-TS/2+4,-TS/2+4,TS-8,TS-8);
       ctx.fillStyle='#fff';
-      ctx.font='bold 14px Arial'; // R107: Larger icon font
+      ctx.font='bold 12px Arial'; // R107: Larger icon font, R118: size reduced for label
       ctx.textAlign='center';ctx.textBaseline='middle';
-      const icons={life:'♥',rapid:'⚡',big:'●',shield:'◈',star:'★',grenade:'💣',mine:'💥',frozen:'❄',repair:'🔧',invis:'👻',megaShield:'🛡️','2xScore':'✖️2'};
-      ctx.fillText(icons[this.type]||'?',0,2);
+      const icons={life:'♥',rapid:'⚡',big:'●',shield:'🛡',star:'★',grenade:'💣',mine:'💥',frozen:'❄',repair:'🔧',invis:'👻',megaShield:'🛡️','2xScore':'✖️2'};
+      const labels={life:'HP',rapid:'RP',big:'BG',shield:'SH',star:'ST',grenade:'GR',mine:'BM',frozen:'FR',repair:'RP',invis:'IN',megaShield:'MS','2xScore':'2X'};
+      ctx.fillText(icons[this.type]||'?',0,0);
+      ctx.font='bold 7px Arial';
+      ctx.fillText(labels[this.type]||'??',0,9);
     }
     ctx.restore();
   }
@@ -2468,7 +2471,7 @@ function updateEnemyPreview(){
 }
 
 // 道具状态显示
-const puIcons={life:'♥',rapid:'⚡',big:'●',shield:'◈',star:'★',grenade:'💣',mine:'⚓',skill1:'⚡',skill2:'⏱'};
+const puIcons={life:'♥',rapid:'⚡',big:'●',shield:'🛡',star:'★',grenade:'💣',mine:'💥',skill1:'⚡',skill2:'⏱'};
 const puColors={life:'#f00',rapid:'#ff0',big:'#f80',shield:'#00f',star:'#0ff',grenade:'#0f0',mine:'#f0f',skill1:'#0cf',skill2:'#cf0'};
 function updatePowerupStatus(){
   const container=document.getElementById('powerup-status');
@@ -3752,7 +3755,7 @@ function showStartScreen(){
     ${hiScoreHTML}
     ${statsHTML}
     <p style="margin-top:8px;color:#aaa;font-size:11px">ENTER - Start | SHIFT+ENTER - 2P</p>
-    <p style="color:#666;font-size:11px">M - Mute | P - Pause</p>
+    <p style="color:#666;font-size:11px">M - Mute | H - High Contrast | ESC/P - Pause</p>
     ${modeButtons}
     <p class="blink btn-hint" style="margin-top:20px;font-size:18px;color:#0f0">[ PRESS ENTER ]</p>`;
   msg.style.display='block';
