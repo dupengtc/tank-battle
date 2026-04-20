@@ -45,6 +45,8 @@
   @keyframes wobble{0%,100%{transform:rotate(0deg)}20%{transform:rotate(-8deg)}40%{transform:rotate(8deg)}60%{transform:rotate(-5deg)}80%{transform:rotate(3deg)}}
   @keyframes smoothPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.08);opacity:0.85}}
   @keyframes fadeSlideUp{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
+  @keyframes lifePulse{0%,100%{text-shadow:0 0 8px #f00;transform:scale(1)}50%{text-shadow:0 0 15px #f44;transform:scale(1.1)}}
+  @keyframes scorePop{0%{transform:scale(1)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
   #minimap{position:absolute;bottom:4px;right:4px;width:80px;height:60px;border:1px solid #0f0;z-index:4;opacity:0.8;background:rgba(0,20,0,0.9)}
   .hud-sep{width:1px;height:20px;background:#333;margin:0 4px}
   #powerup-status{min-height:20px}
@@ -2902,11 +2904,16 @@ function animateScoreGain(){
 
 function updateLivesDisplay(){
   // R103: Heart icons for lives
+  // R141: UI animation polish - enhanced with glow pulse
   const el=document.getElementById('lives-display');
   if(!el)return;
   let html='';
-  for(let i=0;i<lives;i++)html+='❤️';
-  el.textContent=html;
+  for(let i=0;i<lives;i++){
+    // R141: Each heart has a subtle pulsing animation with staggered delay
+    const delay=i*0.15;
+    html+=`<span style="animation:lifePulse 1.5s ease-in-out infinite;animation-delay:${delay}s">❤️</span>`;
+  }
+  el.innerHTML=html;
 }
 
 function updateTankLevel(){
@@ -3989,17 +3996,16 @@ function gameLoop(ts){
     ctx.fillRect(0,0,GW,H);
     ctx.restore();
   }
-  // Kill edge flash
-  if(killFlashTimer>0){
-    killFlashTimer--;
-    const alpha=killFlashTimer/15*0.6;
+  // R149: Multi-layer screen shake with edge vignette flash
+  // Edge vignette flash based on screen shake intensity
+  if(screenShake>8){
     ctx.save();
-    ctx.globalAlpha=alpha;
-    const grad=ctx.createRadialGradient(GW/2,H/2,0,GW/2,H/2,GW*0.7);
-    grad.addColorStop(0,'transparent');
-    grad.addColorStop(0.7,'transparent');
-    grad.addColorStop(1,'rgba(255,100,50,0.8)');
-    ctx.fillStyle=grad;
+    const gradient=ctx.createRadialGradient(GW/2,H/2,GW*0.3,GW/2,H/2,GW*0.8);
+    gradient.addColorStop(0,'transparent');
+    gradient.addColorStop(0.5,'transparent');
+    gradient.addColorStop(1,`rgba(255,100,50,${Math.min(0.4,screenShake/50)})`);
+    ctx.globalAlpha=screenShake/30;
+    ctx.fillStyle=gradient;
     ctx.fillRect(0,0,GW,H);
     ctx.restore();
   }
