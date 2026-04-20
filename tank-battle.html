@@ -1608,15 +1608,17 @@ class Explosion{
       ctx.stroke();
     }
 
-    // Particles
-    ctx.globalAlpha=1;
+    // R143: Enhanced particles with glow
+    ctx.globalAlpha=1;ctx.shadowColor='#ff0';ctx.shadowBlur=8*(1-p)+2;
     for(const part of this.particles){
       if(part.life<=0)continue;
       const px=cx+Math.cos(part.angle)*part.speed*(1-p)*10;
       const py=cy+Math.sin(part.angle)*part.speed*(1-p)*10;
-      ctx.globalAlpha=part.life;
-      ctx.fillStyle=part.color;
-      ctx.fillRect(px,py,part.size*(1-p*0.5),part.size*(1-p*0.5));
+      ctx.globalAlpha=part.life;ctx.fillStyle=part.color;
+      const ps=part.size*(1-p*0.5);
+      ctx.beginPath();ctx.arc(px,py,ps*0.7,0,Math.PI*2);ctx.fill();
+      if(part.size>4){ctx.globalAlpha=part.life*0.5;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(px,py,ps*0.3,0,Math.PI*2);ctx.fill();}
+    }
     }
     ctx.restore();
   }
