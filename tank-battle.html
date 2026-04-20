@@ -2842,10 +2842,13 @@ function gameOver(win=false){
       </div>
       <p class="blink" style="margin-top:16px">[ PRESS ENTER TO CONTINUE ]</p>`;
   }else{
+    // R111: New high score celebration
+    const isNewRecord=score>=hiScore&&score>0;
     msg.innerHTML=`<h1 style="color:#f44;text-shadow:0 0 20px #f44">GAME OVER</h1>
+      ${isNewRecord?'<h2 style="color:#ff0;animation:glow 0.5s infinite">★ NEW RECORD! ★</h2>':''}
       <div style="background:rgba(0,0,0,0.5);padding:10px;margin:10px 0;border:1px solid #f44;text-align:left">
-        <p style="color:#ff0">FINAL SCORE: ${formatScore(score)}</p>
-        <p style="color:${score>=hiScore?'#0f0':'#aaa'}">HI-SCORE: ${formatScore(hiScore)}${score>=hiScore?' [NEW!]':''}</p>
+        <p style="color:#ff0;font-size:16px">FINAL SCORE: ${formatScore(score)}</p>
+        <p style="color:${isNewRecord?'#0f0':'#aaa'};font-size:14px">HI-SCORE: ${formatScore(hiScore)}${isNewRecord?' ★':''}</p>
         <p style="color:#fff">WAVES SURVIVED: ${wave-1}</p>
         <p style="color:#fff">ENEMIES KILLED: ${killCount}</p>
         <p style="color:#fff">ACCURACY: ${accuracy}%</p>
@@ -2853,11 +2856,12 @@ function gameOver(win=false){
         <p style="color:#aaa">KILL RATE: ${kps}/min</p>
         <p style="color:#fd0">COINS: ${coins}</p>
       </div>
+      <p style="color:#888;font-size:12px;margin-top:8px">Take a moment to review your performance...</p>
       <p id="restart-prompt" class="blink" style="margin-top:16px;opacity:0">[ PRESS ENTER TO RESTART ]</p>`;
     setTimeout(()=>{
       const rp=document.getElementById('restart-prompt');
       if(rp)rp.style.opacity='1';
-    },2000);
+    },2500);
   }
   msg.style.display='block';
   updateHUD();
