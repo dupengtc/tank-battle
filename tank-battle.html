@@ -3046,6 +3046,29 @@ function draw(){
     ctx.restore();
   }
 
+  // R114: Large centered combo display
+  if(comboCount>=2&&gameState==='playing'){
+    ctx.save();
+    const comboPulse=1+0.1*Math.sin(Date.now()/100);
+    ctx.fillStyle='rgba(0,0,0,0.5)';
+    ctx.fillRect(GW/2-80,H/2-40,160,50);
+    ctx.strokeStyle='#ff0';
+    ctx.lineWidth=2;
+    ctx.strokeRect(GW/2-80,H/2-40,160,50);
+    ctx.fillStyle='#ff0';
+    ctx.font=`bold ${comboCount>=5?36:28}px Courier New`;
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.shadowColor='#ff0';
+    ctx.shadowBlur=15*comboPulse;
+    ctx.fillText(`COMBO x${comboCount}!`,GW/2,H/2-15);
+    ctx.font='bold 14px Courier New';
+    ctx.fillStyle='#fff';
+    ctx.shadowBlur=5;
+    ctx.fillText(`x${comboMultiplier} SCORE`,GW/2,H/2+10);
+    ctx.restore();
+  }
+
   // Bullet prediction line when holding space
   if(spaceHeld&&player&&player.alive&&gameState==='playing'){
     drawBulletPrediction(player);
