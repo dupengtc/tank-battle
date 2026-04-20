@@ -3130,6 +3130,15 @@ function nextWave(){
   wavePerformanceScore=0;
   waveDeaths=0;
 
+  // R141: Wave transition animation
+  const waveEl=document.getElementById('wave');
+  if(waveEl){
+    waveEl.style.animation='none';
+    waveEl.offsetHeight; // Trigger reflow
+    waveEl.style.animation='scorePop 0.4s ease-out';
+    waveEl.style.textShadow='0 0 20px #fd0';
+    setTimeout(()=>{waveEl.style.textShadow='';},500);
+  }
   updateHUD();
   updateTankLevel();
   // R80: Wave clear flash effect
