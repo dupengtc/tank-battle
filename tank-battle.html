@@ -18,7 +18,7 @@
   .hud-item{display:flex;align-items:center;gap:8px}
   .hud-label{color:#888;font-size:11px;letter-spacing:1px}
   .hud-val{color:#0f0;font-weight:bold;min-width:40px;text-shadow:0 0 6px #0f0}
-  .hud-val.red{color:#f44;text-shadow:0 0 6px #f44}
+  .hud-val.red{color:#f44;text-shadow:0 0 10px #f44;font-size:18px}
   .hud-val.gold{color:#fd0;text-shadow:0 0 6px #fd0}
   #msg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;z-index:5;display:none;pointer-events:none}
   #msg h1{font-size:36px;color:#0f0;text-shadow:0 0 20px #0f0,0 0 40px #0a0;margin-bottom:16px;letter-spacing:4px;animation:glow 2s ease-in-out infinite}
@@ -81,7 +81,7 @@
     </div>
     <div class="hud-item">
       <span class="hud-label">LIVES</span>
-      <div class="lives" id="lives-display"></div>
+      <span id="lives-display" style="color:#f00;font-size:16px;text-shadow:0 0 8px #f00"></span>
     </div>
     <div class="hud-item">
       <span class="hud-label">HI-SCORE</span>
@@ -89,7 +89,7 @@
     </div>
     <div class="hud-item">
       <span class="hud-label">BASE</span>
-      <span class="hud-val" id="base-hp" style="color:#daa520;text-shadow:0 0 6px #daa520">3</span>
+      <span id="base-hp" style="color:#f44;font-size:16px;text-shadow:0 0 8px #f44">❤️❤️❤️</span>
     </div>
     <div id="powerup-status" style="display:flex;gap:6px;align-items:center;margin-left:8px"></div>
   </div>
@@ -2337,13 +2337,16 @@ function updateHUD(){
   document.getElementById('wave').textContent=wave;
   document.getElementById('enemies').textContent=enemiesLeft;
   document.getElementById('hiscore').textContent=formatScore(hiScore);
-  // Base HP display
+  // R103: Base HP display with heart icons
   const baseHpEl=document.getElementById('base-hp');
   if(baseHpEl&&base){
-    baseHpEl.textContent=base.hp||3;
-    if(base.hp===2)baseHpEl.style.color='#f80';
-    else if(base.hp===1)baseHpEl.style.color='#f00';
-    else baseHpEl.style.color='#daa520';
+    let hearts='';
+    for(let i=0;i<base.hp;i++)hearts+='❤️';
+    for(let i=base.hp;i<base.maxHp;i++)hearts+='🖤';
+    baseHpEl.textContent=hearts;
+    if(base.hp===1)baseHpEl.style.color='#f00';
+    else if(base.hp===2)baseHpEl.style.color='#f80';
+    else baseHpEl.style.color='#f44';
   }
   // Time display
   const timeEl=document.getElementById('wave-time');
@@ -2504,13 +2507,12 @@ function animateScoreGain(){
 }
 
 function updateLivesDisplay(){
+  // R103: Heart icons for lives
   const el=document.getElementById('lives-display');
-  el.innerHTML='';
-  for(let i=0;i<5;i++){
-    const d=document.createElement('div');
-    d.className='life-icon'+(i>=lives?' dead':'');
-    el.appendChild(d);
-  }
+  if(!el)return;
+  let html='';
+  for(let i=0;i<lives;i++)html+='❤️';
+  el.textContent=html;
 }
 
 function updateTankLevel(){
