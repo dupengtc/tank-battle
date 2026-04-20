@@ -1547,21 +1547,35 @@ class Bullet{
     if(this.x<0||this.x>GW||this.y<0||this.y>H-HUD_H){this.alive=false;this.active=false;}
   }
   draw(){
-    // R129: Enhanced bullet trail with glow effect
-    ctx.save();
+    // R139: Particle trails on bullets - enhanced trail with spark particles
+    const trailColors=this.big?['#f80','#f60','#ff0']:['#ff0','#fa0','#fff'];
     for(let i=0;i<this.trail.length;i++){
       const t=this.trail[i];
-      const alpha=(i+1)/this.trail.length*0.7;
-      ctx.globalAlpha=alpha;
-      ctx.fillStyle=this.big?C.bulletBig:C.bullet;
-      ctx.shadowColor=this.big?'#f80':'#ff0';
-      ctx.shadowBlur=8;
-      const ts=this.big?3*(i+1)/this.trail.length:2*(i+1)/this.trail.length;
+      const ratio=(i+1)/this.trail.length;
+      // Main trail glow
+      ctx.save();
+      ctx.globalAlpha=ratio*0.6;
+      ctx.fillStyle=trailColors[i%trailColors.length];
+      ctx.shadowColor=trailColors[i%trailColors.length];
+      ctx.shadowBlur=this.big?10:6;
+      const ts=this.big?4*ratio:2.5*ratio;
       ctx.beginPath();
       ctx.arc(t.x,t.y,ts,0,Math.PI*2);
       ctx.fill();
+      ctx.restore();
+      // R139: Extra spark particles for big bullets
+      if(this.big&&i%2===0&&ratio>0.3){
+        ctx.save();
+        ctx.globalAlpha=ratio*0.4;
+        ctx.fillStyle='#fff';
+        ctx.shadowColor='#fff';
+        ctx.shadowBlur=5;
+        ctx.beginPath();
+        ctx.arc(t.x+(Math.random()-0.5)*4,t.y+(Math.random()-0.5)*4,1,0,Math.PI*2);
+        ctx.fill();
+        ctx.restore();
+      }
     }
-    ctx.restore();
 
     // Draw bullet with enhanced glow
     ctx.save();
