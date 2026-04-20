@@ -1776,10 +1776,10 @@ class PowerUp{
       ctx.fillStyle='rgba(255,255,255,0.5)';
       ctx.fillRect(-TS/2+4,-TS/2+4,TS-8,TS-8);
       ctx.fillStyle='#fff';
-      ctx.font='bold 10px Arial';
+      ctx.font='bold 14px Arial'; // R107: Larger icon font
       ctx.textAlign='center';ctx.textBaseline='middle';
       const icons={life:'♥',rapid:'⚡',big:'●',shield:'◈',star:'★',grenade:'💣',mine:'💥',frozen:'❄',repair:'🔧',invis:'👻',megaShield:'🛡️','2xScore':'✖️2'};
-      ctx.fillText(icons[this.type]||'?',0,1);
+      ctx.fillText(icons[this.type]||'?',0,2);
     }
     ctx.restore();
   }
