@@ -39,6 +39,12 @@
   @keyframes slideIn{0%{transform:translateX(-100%);opacity:0}100%{transform:translateX(0);opacity:1}}
   @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.7;transform:scale(0.95)}}
   @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+  /* R124: Enhanced animation curves - elastic, bounce, and spring effects */
+  @keyframes elasticPop{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.15)}70%{transform:scale(0.95)}85%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
+  @keyframes springBounce{0%{transform:scale(0.5);opacity:0}40%{transform:scale(1.2)}60%{transform:scale(0.9)}80%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
+  @keyframes wobble{0%,100%{transform:rotate(0deg)}20%{transform:rotate(-8deg)}40%{transform:rotate(8deg)}60%{transform:rotate(-5deg)}80%{transform:rotate(3deg)}}
+  @keyframes smoothPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.08);opacity:0.85}}
+  @keyframes fadeSlideUp{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
   #minimap{position:absolute;bottom:4px;right:4px;width:80px;height:60px;border:1px solid #0f0;z-index:4;opacity:0.8;background:rgba(0,20,0,0.9)}
   .hud-sep{width:1px;height:20px;background:#333;margin:0 4px}
   #powerup-status{min-height:20px}
@@ -209,6 +215,7 @@ function renderTerrainToCache(){
     for(let x=0;x<G;x++){
       const px=x*TS2,py=y*TS2;
       if(bricks[y]&&bricks[y][x]>0){
+        // R135: Enhanced brick terrain with detail
         tc.fillStyle=C.brick;
         tc.fillRect(px,py,TS2,TS2);
         tc.fillStyle=C.brickDark;
@@ -218,6 +225,11 @@ function renderTerrainToCache(){
         tc.fillStyle=C.brickDark;
         tc.fillRect(px+TS2/2-1,py,1,TS2);
         tc.fillRect(px,py+TS2/2-1,TS2,1);
+        // Add subtle crack detail
+        if((x+y)%3===0){
+          tc.fillStyle='rgba(0,0,0,0.15)';
+          tc.fillRect(px+4,py+8,2,6);
+        }
       }
       if(steels[y]&&steels[y][x]>0){
         tc.fillStyle=C.steel;
@@ -626,12 +638,21 @@ function updateAchievements(){
 function drawAchievements(){
   if(achievementPopTimer>0){
     achievementPopTimer--;
-    const y=200+Math.sin((180-achievementPopTimer)*0.1)*10;
+    // R124: Spring bounce animation curve
+    const rawT=(180-achievementPopTimer)/180;
+    const springT=rawT<0.7?rawT/0.7:(1-Math.pow(1-(rawT-0.7)/0.3,3));
+    const bounceY=200+Math.sin(springT*Math.PI*2)*15*(1-springT);
+    const scale=0.8+0.2*Math.sin(springT*Math.PI);
     ctx.save();
+    ctx.translate(GW/2,bounceY);
+    ctx.scale(scale,scale);
+    ctx.translate(-GW/2,-bounceY);
     ctx.fillStyle='rgba(0,0,0,0.7)';
     ctx.fillRect(GW/2-150,y-20,300,60);
     ctx.strokeStyle='#ffd700';
-    ctx.lineWidth=2;
+    ctx.lineWidth=2+2*(1-springT);
+    ctx.shadowColor='#ffd700';
+    ctx.shadowBlur=10*(1-springT);
     ctx.strokeRect(GW/2-150,y-20,300,60);
     ctx.fillStyle='#fff';
     ctx.font='14px monospace';
