@@ -569,12 +569,12 @@ function resizeGame(){
   if(!wrap)return;
   // R121: Update canvas pixel resolution to match scaled game world
   canvas.width=GW;
-  canvas.height=GH*TS;
+  canvas.height=H-HUD_H;
   const screenW=window.innerWidth;
   const screenH=window.innerHeight;
   const gameW=800;
   const gameH=600;
-  scale=Math.min(screenW/gameW,screenH/gameH)*0.95;
+  scale=Math.min(screenW/gameW,screenH/gameH)*0.98;
   scale=Math.max(0.5,Math.min(scale,3));
   wrap.style.transform='scale('+scale+')';
   wrap.style.left=Math.max(0,(screenW-gameW*scale)/2)+'px';
