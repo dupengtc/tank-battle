@@ -33,8 +33,12 @@
   .lives{display:flex;gap:4px}
   .life-icon{width:14px;height:14px;background:#0f0;clip-path:polygon(50% 0%,100% 30%,100% 100%,0 100%,0 30%);box-shadow:0 0 4px #0f0}
   .life-icon.dead{background:#333;box-shadow:none}
-  #level-up{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);color:#ff0;font-size:24px;font-weight:bold;text-shadow:0 0 20px #ff0;z-index:6;display:none;animation:fadeUp 1s ease-out forwards}
+  #level-up{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);color:#ff0;font-size:24px;font-weight:bold;text-shadow:0 0 20px #ff0;z-index:6;display:none;animation:fadeUp 1s cubic-bezier(0.25,0.46,0.45,0.94) forwards}
   @keyframes fadeUp{0%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}100%{opacity:0;transform:translate(-50%,-150%) scale(1)}}
+  @keyframes bounce{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+  @keyframes slideIn{0%{transform:translateX(-100%);opacity:0}100%{transform:translateX(0);opacity:1}}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.7;transform:scale(0.95)}}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
   #minimap{position:absolute;bottom:4px;right:4px;width:80px;height:60px;border:1px solid #0f0;z-index:4;opacity:0.8;background:rgba(0,20,0,0.9)}
   .hud-sep{width:1px;height:20px;background:#333;margin:0 4px}
   #powerup-status{min-height:20px}
