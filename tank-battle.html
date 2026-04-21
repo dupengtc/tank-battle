@@ -1015,6 +1015,91 @@ function triggerFusionFlash(){
   screenShake=8;
 }
 
+// Cyberpunk Fusion System
+function checkPowerupFusion(pu) {
+  if (heldPowerup === null) {
+    // Pick up powerup to hold
+    heldPowerup = pu;
+    playPowerup();
+    return true;
+  }
+
+  // Try to fuse with held powerup
+  const key = [heldPowerup.type, pu.type].sort().join(',');
+  const fusion = FUSION_TABLE[key];
+
+  if (fusion) {
+    // Fusion success!
+    activePowerups = [{ ...fusion, timer: fusion.duration }];
+    heldPowerup = null;
+    triggerFusionEffect(fusion);
+    playFusionSound();
+    return true;
+  } else {
+    // No fusion - replace held powerup
+    heldPowerup = pu;
+    playPowerup();
+    return true;
+  }
+}
+
+function triggerFusionEffect(fusion) {
+  // Screen flash
+  fusionFlashTimer = 8;
+  flashColor = fusion.color.replace('#', 'rgba(').replace(/(..)(..)(..)/, (_, r, g, b) =>
+    `${parseInt(r, 16)}, ${parseInt(g, 16)}, ${parseInt(b, 16)}, 0.5)`) + ')';
+
+  // Screen shake
+  screenShake = 12;
+
+  // Show fusion name
+  showFusionNotification(fusion.name, fusion.color);
+
+  // Big particle burst
+  for (let i = 0; i < 50; i++) {
+    const p = getParticle();
+    p.reset(player.cx, player.cy, fusion.color, 8, true, 60);
+    p.vx = (Math.random() - 0.5) * 10;
+    p.vy = (Math.random() - 0.5) * 10;
+    p.size = 3 + Math.random() * 5;
+    p.maxLife = p.life;
+    particles.push(p);
+  }
+}
+
+function showFusionNotification(name, color) {
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: ${color};
+    font-size: 28px;
+    font-weight: bold;
+    text-shadow: 0 0 20px ${color}, 0 0 40px ${color};
+    z-index: 100;
+    animation: fusionPop 1.5s ease-out forwards;
+    pointer-events: none;
+  `;
+  notification.textContent = name + '!';
+  document.getElementById('wrap').appendChild(notification);
+  setTimeout(() => notification.remove(), 1500);
+
+  // Update HUD fusion display
+  const fusionDisplay = document.getElementById('fusion-display');
+  if (fusionDisplay) {
+    fusionDisplay.textContent = name;
+    fusionDisplay.style.color = color;
+  }
+}
+
+function playFusionSound() {
+  // Ascending arpeggio
+  [400, 500, 600, 800, 1000, 1200].forEach((f, i) =>
+    setTimeout(() => playTone(f, 'square', 0.15, 0.2), i * 50));
+}
+
 // Weather system
 function updateWeather(){
   weatherTimer++;
@@ -3855,7 +3940,7 @@ function update(){
     if(p.alive&&tank&&tank.alive&&Math.abs(tank.cx-(p.x+TS/2))<TS&&Math.abs(tank.cy-(p.y+TS/2))<TS){
       p.alive=false;
       p.triggerPickupAnimation(); // R79: pickup animation
-      applyPowerup(p.type,tank);
+      checkPowerupFusion(p);
     }
   };
 
