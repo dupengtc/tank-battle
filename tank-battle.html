@@ -712,21 +712,21 @@ function drawAchievements(){
     ctx.scale(scale,scale);
     ctx.translate(-GW/2,-bounceY);
     ctx.fillStyle='rgba(0,0,0,0.7)';
-    ctx.fillRect(GW/2-150,y-20,300,60);
+    ctx.fillRect(GW/2-150,bounceY-20,300,60);
     ctx.strokeStyle='#ffd700';
     ctx.lineWidth=2+2*(1-springT);
     ctx.shadowColor='#ffd700';
     ctx.shadowBlur=10*(1-springT);
-    ctx.strokeRect(GW/2-150,y-20,300,60);
+    ctx.strokeRect(GW/2-150,bounceY-20,300,60);
     ctx.fillStyle='#fff';
     ctx.font='14px monospace';
     ctx.textAlign='center';
     if(achievementQueue.length>0){
       const ach=achievementQueue[0].ach;
-      ctx.fillText(ach.icon+' Achievement Unlocked!',GW/2,y);
+      ctx.fillText(ach.icon+' Achievement Unlocked!',GW/2,bounceY);
       ctx.font='12px monospace';
       ctx.fillStyle='#aaa';
-      ctx.fillText(ach.name+': '+ach.desc,GW/2,y+18);
+      ctx.fillText(ach.name+': '+ach.desc,GW/2,bounceY+18);
     }
     ctx.restore();
     if(achievementPopTimer<=0&&achievementQueue.length>0)achievementQueue.shift();
