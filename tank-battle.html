@@ -4142,14 +4142,17 @@ function showStartScreen(){
    MODULE: Event Listeners & Initialization
    ============================================================= */
 document.addEventListener('keydown',e=>{
+  console.log('[DEBUG] keydown:', e.code, 'gameState:', gameState);
   keys[e.code]=true;
   if(e.code==='Space')spaceHeld=true;
   if(e.code==='Enter'){
+    console.log('[DEBUG] Enter pressed, shopActive:', shopActive, 'gameState:', gameState);
     if(shopActive){
       // R84: Close shop and resume
       closeShop();
       document.getElementById('msg').style.display='none';
     }else if(gameState==='start'||gameState==='gameover'||gameState==='victory'){
+      console.log('[DEBUG] Starting game...');
       // Level selection with arrow keys
       if(e.code==='ArrowRight'||e.code==='ArrowUp'){
         selectedLevel=selectedLevel%5+1;
@@ -4160,8 +4163,10 @@ document.addEventListener('keydown',e=>{
         if(selectedLevel<1)selectedLevel=unlockedLevels;
         showStartScreen();
       }else if(e.shiftKey){
+        console.log('[DEBUG] Calling startGame(true)');
         startGame(true);
       }else{
+        console.log('[DEBUG] Calling startGame(false)');
         startGame(false);
       }
     }else if(gameState==='playing'){
