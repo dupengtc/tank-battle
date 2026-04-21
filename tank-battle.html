@@ -3107,7 +3107,8 @@ function updateLivesDisplay(){
 
 function updateTankLevel(){
   const lvl=player?player.level:1;
-  document.getElementById('tank-level').textContent=lvl;
+  const lvlEl=document.getElementById('tank-level');
+  if(lvlEl)lvlEl.textContent=lvl;
   // Update stars display (max 3 stars)
   const starsEl=document.getElementById('tank-stars');
   if(starsEl){
