@@ -2901,13 +2901,10 @@ function updateHUD(){
   // R103: Base HP display with heart icons
   const baseHpEl=document.getElementById('base-hp');
   if(baseHpEl&&base){
-    let hearts='';
-    for(let i=0;i<base.hp;i++)hearts+='❤️';
-    for(let i=base.hp;i<base.maxHp;i++)hearts+='🖤';
-    baseHpEl.textContent=hearts;
-    if(base.hp===1)baseHpEl.style.color='#f00';
-    else if(base.hp===2)baseHpEl.style.color='#f80';
-    else baseHpEl.style.color='#f44';
+    const hp=base.hp;
+    baseHpEl.textContent='♥'.repeat(hp);
+    baseHpEl.style.color=hp<=1?'#f44':'#0ff';
+    baseHpEl.style.textShadow=`0 0 8px ${hp<=1?'#f44':'#0ff'}`;
   }
   // Time display
   const timeEl=document.getElementById('wave-time');
@@ -3067,18 +3064,45 @@ function animateScoreGain(){
   }
 }
 
+function updatePowerupDisplay(){
+  const container=document.getElementById('powerup-status');
+  if(!container)return;
+  container.innerHTML='';
+
+  // Show held powerup
+  if(heldPowerup){
+    const pu=POWERUP_TYPES[heldPowerup];
+    if(pu){
+      container.innerHTML+=`
+        <div class="pu-icon fusion-active" style="color:${pu.color};text-shadow:0 0 8px ${pu.color}">
+          ${pu.icon}
+          <div class="pu-bar"><div class="pu-bar-fill" style="width:100%;background:${pu.color}"></div></div>
+        </div>
+      `;
+    }
+  }
+
+  // Show active fusion
+  activePowerups.forEach(f=>{
+    container.innerHTML+=`
+      <div class="pu-icon fusion-active" style="color:${f.color};text-shadow:0 0 8px ${f.color}">
+        ${f.icon}
+        <div class="pu-bar">
+          <div class="pu-bar-fill" style="width:${(f.timer/f.duration)*100}%;background:${f.color}"></div>
+        </div>
+      </div>
+    `;
+  });
+}
+
 function updateLivesDisplay(){
   // R103: Heart icons for lives
   // R141: UI animation polish - enhanced with glow pulse
   const el=document.getElementById('lives-display');
   if(!el)return;
-  let html='';
-  for(let i=0;i<lives;i++){
-    // R141: Each heart has a subtle pulsing animation with staggered delay
-    const delay=i*0.15;
-    html+=`<span style="animation:lifePulse 1.5s ease-in-out infinite;animation-delay:${delay}s">❤️</span>`;
-  }
-  el.innerHTML=html;
+  el.textContent='♦'.repeat(lives);
+  el.style.color='#0ff';
+  el.style.textShadow='0 0 8px #0ff';
 }
 
 function updateTankLevel(){
@@ -3236,6 +3260,7 @@ function startGame(twoPlayer=false){
   waveDamageTaken=0;
   updateHUD();
   updateLivesDisplay();
+  updatePowerupDisplay();
   updateTankLevel();
   gameState='playing';
   document.getElementById('msg').style.display='none';
