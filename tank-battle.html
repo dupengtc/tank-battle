@@ -4064,6 +4064,90 @@ function update(){
 }
 
 /* =============================================================
+   MODULE: Fusion Effects
+   ============================================================= */
+// Apply active fusion effects
+function applyFusionEffects() {
+  // Handle held powerup (for visual display only - effect applied when fused)
+
+  for (let i = activePowerups.length - 1; i >= 0; i--) {
+    const pu = activePowerups[i];
+    pu.timer--;
+
+    if (pu.timer <= 0) {
+      activePowerups.splice(i, 1);
+      continue;
+    }
+
+    // Apply effect based on type
+    switch (pu.effect) {
+      case 'invincible_rapid':
+        player.invincible = Math.max(player.invincible, 1);
+        player.rapid = true;
+        player.bigBullet = true;
+        break;
+      case 'phase_shift':
+        player.invincible = Math.max(player.invincible, 1);
+        // Render player as semi-transparent ghost (handled in draw)
+        break;
+      case 'cryo_shield':
+        // Freeze nearby enemies
+        if (enemies && enemies.length) {
+          enemies.forEach(e => {
+            if (e.alive && Math.hypot(e.cx - player.cx, e.cy - player.cy) < TS * 4) {
+              e.frozen = Math.max(e.frozen || 0, 60);
+            }
+          });
+        }
+        break;
+      case 'titan_mode':
+        player.level = 4; // Giant tank
+        player.bigBullet = true;
+        break;
+      case 'blitz':
+        player.rapid = true;
+        player.invincible = Math.max(player.invincible, 1);
+        player.speed *= 2;
+        break;
+      case 'frost_bolt':
+        // Bullets slow enemies on hit (handled in bullet collision)
+        break;
+      case 'barrage':
+        // Triple spread shot
+        player.rapid = true;
+        player.bigBullet = true;
+        break;
+      case 'glacier':
+        // Trail freezes enemies behind
+        if (Math.random() < 0.3 && player) {
+          const trail = getParticle();
+          trail.reset(player.cx, player.cy, '#8cf', 3, true, 120);
+          trail.vx = -player.vx * 0.3;
+          trail.vy = -player.vy * 0.3;
+          particles.push(trail);
+        }
+        break;
+      case 'phantom':
+        // Massive ghost tank
+        player.invincible = Math.max(player.invincible, 1);
+        break;
+      case 'tundra':
+        // Ice missiles
+        player.bigBullet = true;
+        break;
+    }
+  }
+
+  // Clear effects when fusion expires
+  if (activePowerups.length === 0) {
+    player.rapid = false;
+    player.bigBullet = false;
+    player.speed = player.isPlayer ? 2.5 : 2.2;
+    if (player.level > 3) player.level = 3;
+  }
+}
+
+/* =============================================================
    MODULE: Main Game Loop
    ============================================================= */
 let lastTime=0;
@@ -4096,7 +4180,10 @@ function gameLoop(ts){
   // Process updates with accumulator
   if(gameState==='playing'||slowMotionTimer>0){
     while(gameLoop.accumulator>=TICK){
-      if(gameState==='playing')update();
+      if(gameState==='playing'){
+        applyFusionEffects();
+        update();
+      }
       gameLoop.accumulator-=TICK*timeScale;
       if(gameLoop.accumulator<0)gameLoop.accumulator=0;
     }
