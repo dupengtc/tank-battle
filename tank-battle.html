@@ -34,6 +34,20 @@
   .life-icon.dead { background: #333; box-shadow: none; }
   #level-up { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: #f0f; font-size: 24px; font-weight: bold; text-shadow: 0 0 20px #f0f, 0 0 40px #f0f; z-index: 6; display: none; animation: fadeUp 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
   @keyframes fadeUp { 0% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); } 100% { opacity: 0; transform: translate(-50%, -150%) scale(1); } }
+  /* Cyberpunk fusion animations */
+  @keyframes fusionRing {
+    0% { transform: scale(0.1); opacity: 1; border-width: 8px; }
+    100% { transform: scale(3); opacity: 0; border-width: 1px; }
+  }
+  @keyframes neonPulse {
+    0%, 100% { opacity: 0.7; filter: brightness(1); }
+    50% { opacity: 1; filter: brightness(1.3); }
+  }
+  .fusion-active {
+    animation: neonPulse 0.5s ease-in-out infinite;
+    color: #f0f !important;
+    text-shadow: 0 0 10px #f0f, 0 0 20px #f0f, 0 0 30px #f0f !important;
+  }
   #minimap { position: absolute; bottom: 4px; right: 4px; width: 80px; height: 60px; border: 1px solid #0ff; z-index: 4; opacity: 0.9; background: rgba(0,20,30,0.9); box-shadow: 0 0 10px rgba(0,255,255,0.4); }
   body.high-contrast #c { filter: contrast(1.5) brightness(1.2); }
   body.high-contrast .hud-val { color: #fff; text-shadow: 0 0 10px #fff; }
@@ -58,31 +72,21 @@
       <span class="hud-label">WAVE</span>
       <span class="hud-val gold" id="wave">1</span>
     </div>
-    <div class="hud-item" id="time-display">
-      <span class="hud-label">TIME</span>
-      <span class="hud-val" id="wave-time">30</span>
-    </div>
     <div class="hud-item">
       <span class="hud-label">ENEMIES</span>
       <span class="hud-val red" id="enemies">0</span>
     </div>
-    <div class="hud-item" id="enemy-preview">
-      <span class="hud-label">NEXT</span>
-      <span id="enemy-types"></span>
-    </div>
     <div class="hud-item">
-      <span class="hud-label">LEVEL</span>
-      <span class="hud-val" id="tank-level">1</span>
-      <span id="tank-stars" style="color:#ff0;text-shadow:0 0 6px #ff0;font-size:12px;margin-left:-4px">★</span>
-    </div>
-    <div class="hud-item" id="combo-display" style="display:none">
-      <span class="hud-label">COMBO</span>
-      <span class="hud-val gold" id="combo-count">0</span>
-      <span class="hud-val" id="combo-mult" style="color:#f0f">x1</span>
+      <span class="hud-label">WEAPON</span>
+      <span id="weapon-display" style="color:#0ff;text-shadow:0 0 6px #0ff;font-size:12px">NORMAL</span>
     </div>
     <div class="hud-item">
       <span class="hud-label">LIVES</span>
-      <span id="lives-display" style="color:#f00;font-size:16px;text-shadow:0 0 8px #f00"></span>
+      <span id="lives-display" style="color:#0ff;font-size:16px;text-shadow:0 0 8px #0ff"></span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">FUSION</span>
+      <span id="fusion-display" style="color:#f0f;text-shadow:0 0 8px #f0f;font-size:11px">---</span>
     </div>
     <div class="hud-item">
       <span class="hud-label">HI-SCORE</span>
@@ -90,7 +94,7 @@
     </div>
     <div class="hud-item">
       <span class="hud-label">BASE</span>
-      <span id="base-hp" style="color:#f44;font-size:16px;text-shadow:0 0 8px #f44">❤️❤️❤️</span>
+      <span id="base-hp" style="color:#0ff;font-size:16px;text-shadow:0 0 8px #0ff">♥♥♥</span>
     </div>
     <div id="powerup-status" style="display:flex;gap:6px;align-items:center;margin-left:8px"></div>
   </div>
