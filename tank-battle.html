@@ -109,13 +109,12 @@
   <div id="scanlines"></div>
   <div id="vignette"></div>
   <div id="msg">
-    <h1>坦克大战</h1>
-    <h2>BATTLE CITY</h2>
-    <p>玩家1: 方向键移动 | 空格射击</p>
-    <p>玩家2: WASD移动 | X射击 (双人模式)</p>
-    <p>M静音 | P暂停 | C查看统计</p>
-    <p>每5波出现BOSS！保护基地！</p>
-    <p class="blink" style="margin-top:16px;color:#0f0">[ PRESS ENTER ]</p>
+    <h1>TANK BATTLE</h1>
+    <h2>CYBERPUNK EDITION</h2>
+    <p style="color:#0ff">方向键移动 | 空格射击 | Z换武器</p>
+    <p style="color:#f0f">融合系统：拾取道具自动融合</p>
+    <p style="color:#888">P暂停 | M静音</p>
+    <p class="blink" style="margin-top:16px;color:#0ff;text-shadow:0 0 10px #0ff">[ PRESS ENTER ]</p>
   </div>
   <div id="level-up"></div>
   <canvas id="minimap"></canvas>
@@ -818,8 +817,10 @@ const C={
   bullet:'#ff0',bulletBig:'#f80',
   enemy:['#c00','#c60','#c30','#933'],
   player:'#4a4',playerDark:'#383',
-  exp:['#fff','#ff0','#f80','#f00','#800'],
-  // Cyberpunk Powerup Types
+  exp:['#fff','#ff0','#f80','#f00','#800']
+};
+
+/* Cyberpunk Powerup Types */
 const POWERUP_TYPES = {
   SHIELD: { name: 'SHIELD', color: '#00f', icon: '▣', duration: 480 },
   RAPID: { name: 'RAPID', color: '#ff0', icon: '⚡', duration: 480 },
@@ -828,7 +829,7 @@ const POWERUP_TYPES = {
   MEGA: { name: 'MEGA', color: '#f0f', icon: '◉', duration: 600 }
 };
 
-// Fusion table - keys are sorted type pairs
+/* Fusion table - keys are sorted type pairs */
 const FUSION_TABLE = {
   'SHIELD,RAPID': { name: 'OVERDRIVE', color: '#f80', icon: '✦', duration: 720, effect: 'invincible_rapid' },
   'SHIELD,STEALTH': { name: 'PHASE SHIFT', color: '#0ff', icon: '◈', duration: 600, effect: 'phase_shift' },
@@ -842,10 +843,9 @@ const FUSION_TABLE = {
   'FREEZE,MEGA': { name: 'TUNDRA', color: '#0ef', icon: '❄', duration: 600, effect: 'tundra' }
 };
 
-// Active powerups on player
+/* Active powerups on player */
 let activePowerups = [];
-let heldPowerup = null; // Powerup being carried (not yet used)
-};
+let heldPowerup = null;
 
 /* =============================================================
    MODULE: Audio System
