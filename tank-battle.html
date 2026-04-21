@@ -818,7 +818,8 @@ const C={
   bullet:'#ff0',bulletBig:'#f80',
   enemy:['#c00','#c60','#c30','#933'],
   player:'#4a4',playerDark:'#383',
-  exp:['#fff','#ff0','#f80','#f00','#800']
+  exp:['#fff','#ff0','#f80','#f00','#800'],
+  pu:{life:'#f00',rapid:'#ff0',big:'#f80',shield:'#00f',star:'#0ff',frozen:'#0ef',repair:'#0f0',invis:'#c0c',megaShield:'#0ff','2xScore':'#fd0'}
 };
 
 /* Cyberpunk Powerup Types */
@@ -1018,6 +1019,10 @@ function triggerFusionFlash(){
 
 // Cyberpunk Fusion System
 function checkPowerupFusion(pu) {
+  // Only fusion-eligible types
+  const fusionTypes=['rapid','shield','freeze','stealth','mega'];
+  if(!fusionTypes.includes(pu.type))return false;
+
   if (heldPowerup === null) {
     // Pick up powerup to hold
     heldPowerup = pu;
@@ -1025,8 +1030,8 @@ function checkPowerupFusion(pu) {
     return true;
   }
 
-  // Try to fuse with held powerup
-  const key = [heldPowerup.type, pu.type].sort().join(',');
+  // Normalize to uppercase for FUSION_TABLE lookup
+  const key = [heldPowerup.type.toUpperCase(), pu.type.toUpperCase()].sort().join(',');
   const fusion = FUSION_TABLE[key];
 
   if (fusion) {
@@ -2643,11 +2648,12 @@ function spawnEnemy(){
 function spawnPowerup(x,y){
   // Balance: reduce powerup spawn rate
   if(Math.random()>0.3)return;
-  const types=['life','rapid','big','shield','star','grenade','mine','frozen','repair','invis','megaShield','2xScore'];
+  // Cyberpunk: only spawn fusion-eligible powerup types
+  const types=['rapid','shield','freeze','stealth','mega'];
   // Weighted selection
-  const weights=[0.1,0.16,0.16,0.08,0.14,0.12,0.12,0.12];
+  const weights=[0.22,0.22,0.20,0.18,0.18];
   let r=Math.random(),cum=0;
-  let type='star';
+  let type='rapid';
   for(let i=0;i<types.length;i++){
     cum+=weights[i];
     if(r<cum){type=types[i];break;}
