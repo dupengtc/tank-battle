@@ -34,6 +34,12 @@
   .life-icon.dead { background: #333; box-shadow: none; }
   #level-up { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: #f0f; font-size: 24px; font-weight: bold; text-shadow: 0 0 20px #f0f, 0 0 40px #f0f; z-index: 6; display: none; animation: fadeUp 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
   @keyframes fadeUp { 0% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); } 100% { opacity: 0; transform: translate(-50%, -150%) scale(1); } }
+@keyframes fusionPop {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+  20% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+  40% { transform: translate(-50%, -50%) scale(1); }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
   /* Cyberpunk fusion animations */
   @keyframes fusionRing {
     0% { transform: scale(0.1); opacity: 1; border-width: 8px; }
@@ -813,7 +819,32 @@ const C={
   enemy:['#c00','#c60','#c30','#933'],
   player:'#4a4',playerDark:'#383',
   exp:['#fff','#ff0','#f80','#f00','#800'],
-  pu:{life:'#f00',rapid:'#ff0',big:'#f80',shield:'#00f',star:'#0ff',frozen:'#0ef',repair:'#0f0',invis:'#c0c',megaShield:'#0ff','2xScore':'#fd0'}
+  // Cyberpunk Powerup Types
+const POWERUP_TYPES = {
+  SHIELD: { name: 'SHIELD', color: '#00f', icon: '▣', duration: 480 },
+  RAPID: { name: 'RAPID', color: '#ff0', icon: '⚡', duration: 480 },
+  STEALTH: { name: 'STEALTH', color: '#c0c', icon: '◈', duration: 360 },
+  FREEZE: { name: 'FREEZE', color: '#0ef', icon: '❄', duration: 240 },
+  MEGA: { name: 'MEGA', color: '#f0f', icon: '◉', duration: 600 }
+};
+
+// Fusion table - keys are sorted type pairs
+const FUSION_TABLE = {
+  'SHIELD,RAPID': { name: 'OVERDRIVE', color: '#f80', icon: '✦', duration: 720, effect: 'invincible_rapid' },
+  'SHIELD,STEALTH': { name: 'PHASE SHIFT', color: '#0ff', icon: '◈', duration: 600, effect: 'phase_shift' },
+  'SHIELD,FREEZE': { name: 'CRYO SHIELD', color: '#8cf', icon: '❄', duration: 540, effect: 'cryo_shield' },
+  'SHIELD,MEGA': { name: 'TITAN MODE', color: '#f0f', icon: '▣', duration: 720, effect: 'titan_mode' },
+  'RAPID,STEALTH': { name: 'BLITZ', color: '#fff', icon: '⚡', duration: 480, effect: 'blitz' },
+  'RAPID,FREEZE': { name: 'FROST BOLT', color: '#8ff', icon: '❄', duration: 480, effect: 'frost_bolt' },
+  'RAPID,MEGA': { name: 'BARRAGE', color: '#fd0', icon: '⁂', duration: 600, effect: 'barrage' },
+  'STEALTH,FREEZE': { name: 'GLACIER', color: '#aef', icon: '✧', duration: 540, effect: 'glacier' },
+  'STEALTH,MEGA': { name: 'PHANTOM', color: '#c0f', icon: '◉', duration: 600, effect: 'phantom' },
+  'FREEZE,MEGA': { name: 'TUNDRA', color: '#0ef', icon: '❄', duration: 600, effect: 'tundra' }
+};
+
+// Active powerups on player
+let activePowerups = [];
+let heldPowerup = null; // Powerup being carried (not yet used)
 };
 
 /* =============================================================
