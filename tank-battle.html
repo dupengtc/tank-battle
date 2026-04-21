@@ -1207,7 +1207,8 @@ class Tank{
     this.flashRed=0;
     // R83: Weapon system
     this.weaponType=0; // 0=normal,1=shotgun,2=laser,3=missile
-    this.weaponNames=['Normal','Shotgun','Laser','Missile'];
+    this.weaponNames=['NORMAL','SHOTGUN','LASER','MISSILE'];
+    this.weaponCooldown=[350,500,200,800];
     // R104: Movement physics - more responsive for players
     this.vx=0;this.vy=0;
     this.acceleration=isPlayer?0.6:0.4;
@@ -1222,46 +1223,74 @@ class Tank{
   switchWeapon(){
     // R83: Cycle to next weapon
     this.weaponType=(this.weaponType+1)%4;
-    screenShake=3;
-    playTone(800,'square',0.1,0.2);
+    screenShake=5;
+    playTone(600+this.weaponType*100,'square',0.1,0.2);
+    const names=['NORMAL','SHOTGUN','LASER','MISSILE'];
+    const wd=document.getElementById('weapon-display');
+    if(wd)wd.textContent=names[this.weaponType];
   }
   canShoot(){
     const now=Date.now();
-    const cd=this.rapid?120:(this.isPlayer||this.isPlayer2)?this.shotCd:500;
+    const baseCd=this.weaponCooldown[this.weaponType];
+    const cd=this.rapid?(baseCd/2):baseCd;
     return now-this.lastShot>cd;
   }
   shoot(){
     const now=Date.now();
     if(!this.canShoot())return null;
     this.lastShot=now;
+
+    switch(this.weaponType){
+      case 0: this.fireSingle(); break;
+      case 1: this.fireShotgun(); break;
+      case 2: this.fireLaser(); break;
+      case 3: this.fireMissile(); break;
+    }
+    screenShake=Math.max(screenShake,this.weaponType===1?4:2);
+    return null;
+  }
+  fireSingle(){
     const big=this.bigBullet||this.level>=3;
-    // R83: Multi-shot for shotgun
-    const shots=this.weaponType===1?3:1;
-    for(let s=0;s<shots;s++){
-      let bx,by;
-      const spread=this.weaponType===1?(s-1)*0.15:0;
-      if(this.dir===0){bx=this.cx-2;by=this.y-6}
-      else if(this.dir===1){bx=this.x+TS;by=this.cy-2}
-      else if(this.dir===2){bx=this.cx-2;by=this.y+TS}
-      else{bx=this.x-6;by=this.cy-2}
-      playShoot(big);
-      // R104: Shooting recoil - slight screen shake
-      if(this.isPlayer||this.isPlayer2){
-        screenShake=Math.max(screenShake,2);
-      }
-      spawnMuzzleFlash(bx,by,this.dir);
+    const bx=this.dir===0?this.cx-2:(this.dir===1?this.x+TS:this.dir===2?this.cx-2:this.x-6);
+    const by=this.dir===0?this.y-6:(this.dir===1?this.cy-2:this.dir===2?this.y+TS:this.cy-2);
+    const nb=getBullet();
+    nb.reset(bx,by,this.dir,this.isPlayer,big,this.isPlayer2);
+    bullets.push(nb);
+    playShoot(big);
+    spawnMuzzleFlash(bx,by,this.dir);
+  }
+  fireShotgun(){
+    const angles=[-0.2,0,0.2];
+    angles.forEach(a=>{
+      const bx=this.cx,by=this.cy;
       const nb=getBullet();
-      nb.reset(bx,by,this.dir,this.isPlayer,big,this.isPlayer2);
-      // R83: Laser is thin, missile is big
-      if(this.weaponType===2)nb.big=false;
-      if(this.weaponType===3)nb.big=true;
+      nb.reset(bx,by,this.dir,this.isPlayer,false,this.isPlayer2);
+      nb.angle=this.dir*Math.PI/2+a;
+      nb.vx=Math.cos(nb.angle)*8;
+      nb.vy=Math.sin(nb.angle)*8;
+      nb.isLaser=false;
       bullets.push(nb);
-    }
-    // R83: Missile has splash damage - handled in bullet collision
-    if(this.weaponType===3){
-      shotsFired--;
-    }
-    return null; // Already pushed bullets
+    });
+    playShoot(true);
+    for(let i=0;i<8;i++)spawnMuzzleFlash(this.cx,this.cy,this.dir);
+  }
+  fireLaser(){
+    const bx=this.cx,by=this.cy;
+    const nb=getBullet();
+    nb.reset(bx,by,this.dir,this.isPlayer,false,this.isPlayer2);
+    nb.isLaser=true;
+    nb.piercing=true;
+    bullets.push(nb);
+    playTone(1000,'sawtooth',0.1,0.15);
+  }
+  fireMissile(){
+    const bx=this.cx,by=this.cy;
+    const nb=getBullet();
+    nb.reset(bx,by,this.dir,this.isPlayer,true,this.isPlayer2);
+    nb.isMissile=true;
+    nb.homing=true;
+    bullets.push(nb);
+    playTone(300,'sawtooth',0.1,0.1);
   }
   collidesMap(tx,ty){
     const gx=Math.floor(tx/TS),gy=Math.floor((ty-HUD_H)/TS);
@@ -3083,8 +3112,12 @@ function handlePlayerInput(){
   // R82: Skills
   if(keys['KeyQ'])activateSkill1();
   if(keys['KeyF'])activateSkill2();
-  // R83: Weapon switch
-  if(keys['KeyZ'])player.switchWeapon();
+  // R83: Weapon switch with cooldown
+  if((keys['z']||keys['Z'])&&player&&!player.switchCooldown){
+    player.switchWeapon();
+    player.switchCooldown=15;
+  }
+  if(player&&player.switchCooldown>0)player.switchCooldown--;
 }
 
 function handlePlayer2Input(){
