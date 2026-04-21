@@ -2080,9 +2080,9 @@ initTerrainCache();
    MODULE: Map Generation & Rendering
    ============================================================= */
 function generateMap(wv){
-  bricks=[];steels=[];waters=[];forests=[];
+  bricks=[];steels=[];waters=[];forests=[];muds=[];ices=[];cliffs=[];bridges=[];
   for(let y=0;y<GH;y++){
-    bricks[y]=[];steels[y]=[];waters[y]=[];forests[y]=[];
+    bricks[y]=[];steels[y]=[];waters[y]=[];forests[y]=[];muds[y]=[];ices[y]=[];cliffs[y]=[];bridges[y]=[];
     for(let x=0;x<G;x++){
       bricks[y][x]=0;steels[y][x]=0;waters[y][x]=0;forests[y][x]=0;muds[y][x]=0;ices[y][x]=0;cliffs[y][x]=0;bridges[y][x]=0;
     }
