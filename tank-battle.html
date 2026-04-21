@@ -480,8 +480,12 @@ function activateSkill2(){
 let puBlinkTimer=0;
 let comboCount=0,comboTimer=0,comboMultiplier=1;
 let screenShake=0,flashTimer=0,flashColor='rgba(255,255,0,0.3)';
+// Cyberpunk screen shake enhancement
+let screenShakeX=0,screenShakeY=0;
+let screenShakeDecay=0.9;
+let fusionFlashTimer=0;
 // R144: Smooth motion - screen shake with spring physics and intensity layers
-let screenShakeDecay=0.92,screenShakeIntensity=1,screenShakeBounce=0;
+let screenShakeIntensity=1,screenShakeBounce=0;
 let hitStopTimer=0;
 let frozenTimer=0; // Frozen effect - slows all enemies
 let audioCtx=null;
@@ -561,7 +565,17 @@ function resizeGame(){
   const gameH=600;
   scale=Math.min(screenW/gameW,screenH/gameH)*0.98;
   scale=Math.max(0.5,Math.min(scale,3));
-  wrap.style.transform='scale('+scale+')';
+  // Apply cyberpunk screen shake with spring physics
+  if(screenShake>0){
+    screenShake*=screenShakeDecay;
+    screenShakeX=(Math.random()-0.5)*screenShake*2;
+    screenShakeY=(Math.random()-0.5)*screenShake*2;
+    wrap.style.transform=`translate(${screenShakeX}px,${screenShakeY}px) scale(${scale})`;
+  }else{
+    screenShakeX=0;
+    screenShakeY=0;
+    wrap.style.transform=`scale(${scale})`;
+  }
   // R152: Remove left/top - let CSS flex handle centering
 }
 window.addEventListener('resize',resizeGame);
@@ -962,6 +976,12 @@ function spawnDust(x,y,dir){
     ctx.restore();
   };
   particles.push(p);
+}
+
+function triggerFusionFlash(){
+  fusionFlashTimer=8;
+  flashColor='rgba(255,0,255,0.5)';
+  screenShake=8;
 }
 
 // Weather system
